@@ -1,4 +1,4 @@
-# tasks
+# taskize
 
 A Typst package for creating horizontal columned lists, similar to LaTeX's `tasks` package. Perfect for exercises, multiple-choice questions, and any content that benefits from a compact columned layout.
 
@@ -10,14 +10,16 @@ Click on an image to see the source code.
 |:---:|:---:|:---:|
 | [![Basic Tasks](gallery/basic.png)](gallery/basic.typ) | [![Math Exercises](gallery/math.png)](gallery/math.typ) | [![Custom Labels](gallery/labels.png)](gallery/labels.typ) |
 | Basic Tasks | Math Exercises | Custom Labels |
-| [![Vertical Flow](gallery/vertical.png)](gallery/vertical.typ) | [![Resume Numbering](gallery/resume.png)](gallery/resume.typ) | [![Styled](gallery/styled.png)](gallery/styled.typ) |
-| Vertical Flow | Resume Numbering | Styled Tasks |
+| [![Vertical Flow](gallery/vertical.png)](gallery/vertical.typ) | [![Column Spanning](gallery/span.typ)](gallery/span.typ) | [![Bold Labels](gallery/bold.typ)](gallery/bold.typ) |
+| Vertical Flow | Column Spanning | Bold Labels |
 
 ## Features
 
 - **Horizontal flow layout** - Items flow left-to-right across columns (like LaTeX's tasks)
 - **Flexible column counts** - 2, 3, 4 or any number of columns
+- **Column spanning** - Items can span multiple columns using `(N)` syntax
 - **Multiple label formats** - Alphabetic (`a)`, `A)`), numeric (`1)`, `(1)`), roman (`i)`, `I)`), bullets, or custom
+- **Bold labels** - Make labels stand out with bold weight
 - **Resume numbering** - Continue numbering across multiple task blocks
 - **Two flow directions** - Horizontal (a b | c d) or vertical (a c | b d)
 - **Global configuration** - Set defaults for all tasks in your document
@@ -26,7 +28,7 @@ Click on an image to see the source code.
 ## Quick Start
 
 ```typst
-#import "@preview/tasks:0.1.0": tasks
+#import "@preview/taskize:0.2.0": tasks
 
 #tasks[
   + First item
@@ -41,7 +43,7 @@ Click on an image to see the source code.
 ### Simple Two-Column Layout
 
 ```typst
-#import "@preview/tasks:0.1.0": tasks
+#import "@preview/taskize:0.2.0": tasks
 
 #tasks[
   + $2 + 3 = ?$
@@ -54,7 +56,7 @@ Click on an image to see the source code.
 ### Three-Column Layout
 
 ```typst
-#import "@preview/tasks:0.1.0": tasks
+#import "@preview/taskize:0.2.0": tasks
 
 #tasks(columns: 3)[
   + Option A
@@ -69,7 +71,7 @@ Click on an image to see the source code.
 ### Shorthand Functions
 
 ```typst
-#import "@preview/tasks:0.1.0": tasks2, tasks3, tasks4
+#import "@preview/taskize:0.2.0": tasks2, tasks3, tasks4
 
 // Two columns
 #tasks2[
@@ -98,7 +100,7 @@ Click on an image to see the source code.
 ### Built-in Formats
 
 ```typst
-#import "@preview/tasks:0.1.0": tasks
+#import "@preview/taskize:0.2.0": tasks
 
 // Lowercase letters with parenthesis (default)
 #tasks(label: "a)")[+ One  + Two  + Three]
@@ -131,7 +133,7 @@ Click on an image to see the source code.
 ### Custom Label Function
 
 ```typst
-#import "@preview/tasks:0.1.0": tasks
+#import "@preview/taskize:0.2.0": tasks
 
 // Custom emoji labels
 #tasks(label: n => "Q" + str(n) + ":")[
@@ -148,7 +150,7 @@ Click on an image to see the source code.
 Items fill rows first: `a b | c d | e f`
 
 ```typst
-#import "@preview/tasks:0.1.0": tasks
+#import "@preview/taskize:0.2.0": tasks
 
 #tasks(columns: 2, flow: "horizontal")[
   + a
@@ -169,7 +171,7 @@ Items fill rows first: `a b | c d | e f`
 Items fill columns first: `a c e | b d f`
 
 ```typst
-#import "@preview/tasks:0.1.0": tasks
+#import "@preview/taskize:0.2.0": tasks
 
 #tasks(columns: 2, flow: "vertical")[
   + a
@@ -188,7 +190,7 @@ Items fill columns first: `a c e | b d f`
 ## Resuming Numbering
 
 ```typst
-#import "@preview/tasks:0.1.0": tasks, tasks-reset
+#import "@preview/taskize:0.2.0": tasks, tasks-reset
 
 #tasks[
   + First
@@ -217,7 +219,7 @@ Some text between task blocks...
 ## Starting from a Specific Number
 
 ```typst
-#import "@preview/tasks:0.1.0": tasks
+#import "@preview/taskize:0.2.0": tasks
 
 #tasks(start: 5)[
   + This is item 5
@@ -231,7 +233,7 @@ Some text between task blocks...
 Set defaults for all tasks in your document:
 
 ```typst
-#import "@preview/tasks:0.1.0": tasks, tasks-setup
+#import "@preview/taskize:0.2.0": tasks, tasks-setup
 
 // Configure global defaults
 #tasks-setup(
@@ -255,6 +257,96 @@ Set defaults for all tasks in your document:
 ]
 ```
 
+## Advanced Features
+
+### Label Baseline Alignment
+
+Control the vertical alignment of labels relative to content:
+
+```typst
+#import "@preview/taskize:0.2.0": tasks
+
+// Center alignment (default)
+#tasks(label-baseline: "center")[
+  + Short item
+  + Multi-line item\
+    with more text
+]
+
+// Top alignment
+#tasks(label-baseline: "top")[
+  + Item aligned at top
+  + Another item
+]
+
+// Bottom alignment
+#tasks(label-baseline: "bottom")[
+  + Item aligned at bottom
+  + Another item
+]
+```
+
+### Bold Labels
+
+Make labels stand out by using bold weight:
+
+```typst
+#import "@preview/taskize:0.2.0": tasks
+
+// Bold labels for emphasis
+#tasks(label-weight: "bold")[
+  + Important task
+  + Critical item
+  + Key point
+]
+
+// Regular labels (default)
+#tasks(label-weight: "regular")[
+  + Normal item
+  + Standard task
+]
+```
+
+### Column Spanning
+
+Items can span multiple columns using the `+()` or `+(N)` syntax (no space after `+`). This is similar to LaTeX's `\task*` command:
+
+```typst
+#import "@preview/taskize:0.2.0": tasks
+
+#tasks(columns: 3)[
+  + Short
+  + Short
+  + Short
+  +(2) This item spans 2 columns
+  + Short
+  +() This item spans all columns (full width)
+  + Normal
+  + Normal
+]
+
+// Practical example: Multiple choice with explanation
+#tasks(columns: 2, label: "A)")[
+  + Paris
+  + London
+  + Berlin
+  + Madrid
+  +() The capital of France is Paris, known for the Eiffel Tower.
+]
+```
+
+**Syntax:**
+- `+ Content` - Normal item (spans 1 column)
+- `+(2) Content` - Spans 2 columns (no space after +)
+- `+(3) Content` - Spans 3 columns
+- `+() Content` - Spans all columns (full width)
+
+**Notes:**
+- **Important:** No space between `+` and `()` or `(N)`
+- If an item with span doesn't fit in the current row, it wraps to the next row
+- Column spans are clamped to the total number of columns
+- Great for adding explanations, headings, or long content within lists
+
 ## Parameters Reference
 
 ### `tasks` Function
@@ -270,6 +362,8 @@ Set defaults for all tasks in your document:
 | `row-gutter` | length | 0.6em | Space between rows |
 | `label-width` | auto/length | auto | Width reserved for labels |
 | `label-align` | alignment | right | Label alignment |
+| `label-baseline` | string/length | `"center"` | Label vertical alignment: `"center"`, `"top"`, `"bottom"`, or length |
+| `label-weight` | string | `"regular"` | Label font weight: `"regular"` or `"bold"` |
 | `indent-after-label` | length | 0.4em | Space between label and content |
 | `indent` | length | 0pt | Left indentation of entire block |
 | `above` | length | 0.5em | Space before block |
@@ -300,7 +394,7 @@ Set defaults for all tasks in your document:
 ### Math Exercise Sheet
 
 ```typst
-#import "@preview/tasks:0.1.0": tasks
+#import "@preview/taskize:0.2.0": tasks
 
 = Algebra Practice
 
@@ -326,7 +420,7 @@ Solve for $x$:
 ### Multiple Choice Questions
 
 ```typst
-#import "@preview/tasks:0.1.0": tasks
+#import "@preview/taskize:0.2.0": tasks
 
 *Question 1:* What is the capital of France?
 
@@ -350,7 +444,7 @@ Solve for $x$:
 ### Vocabulary List
 
 ```typst
-#import "@preview/tasks:0.1.0": tasks
+#import "@preview/taskize:0.2.0": tasks
 
 = French Vocabulary
 
@@ -364,6 +458,58 @@ Solve for $x$:
 ]
 ```
 
+## When to Use taskize
+
+**taskize** is specifically designed for **horizontal columned layouts** where items flow left-to-right across multiple columns, perfect for exercises, multiple-choice questions, and compact lists. Choose taskize when you need:
+
+- **Horizontal flow layout** - Items arranged in rows across columns (a b | c d | e f)
+- **Compact exercise sheets** - Mathematical exercises, vocabulary lists, multiple-choice questions
+- **Flexible column control** - Easy 2, 3, 4+ column layouts with shorthand functions
+- **Resume numbering** - Continue numbering across multiple task blocks
+- **LaTeX tasks compatibility** - Familiar syntax for users migrating from LaTeX's tasks package
+
+### Comparison with itemize
+
+**[itemize](https://typst.app/universe/package/itemize)** is an excellent, feature-rich package for **vertical list styling** with advanced customization capabilities. Use itemize when you need:
+
+- **Vertical lists** with advanced styling (colors, custom markers, spacing)
+- **Nested lists** with sophisticated formatting
+- **Rich marker customization** (emojis, custom content, per-item markers)
+- **Advanced typography** control over list appearance
+- **Complex list hierarchies** with fine-grained control
+
+**In summary**: Use taskize for horizontal multi-column layouts (exercises, quizzes, compact lists), and use itemize for feature-rich vertical lists with advanced styling. They complement each other well for different layout needs.
+
 ## License
 
 MIT License - see LICENSE file for details.
+
+## Changelog
+
+All notable changes to taskize are documented here.
+
+### [0.2.0] - 2026-01-15
+
+#### Added
+- **Column spanning** - Items can span multiple columns using `(N)` syntax (e.g., `+ (2) Content` or `+ () Full width`)
+- `label-baseline` parameter for controlling vertical alignment of labels (`"center"`, `"top"`, `"bottom"`, or custom length)
+- `label-weight` parameter for bold labels (`"regular"` or `"bold"`)
+- Advanced Features section in documentation with examples
+- Gallery examples for column spanning and bold labels
+
+#### Changed
+- Repository URL updated to GitLab: `https://gitlab.com/nathan-ed/typst-package-taskize`
+- Description enhanced to mention "Horizontal and vertical" flow directions
+
+### [0.1.0] - 2026-01-14
+
+#### Added
+- Initial release with horizontal columned list layout
+- Flexible column counts (2, 3, 4, or custom)
+- Multiple label formats (alphabetic, numeric, roman, bullets, custom)
+- Resume numbering across multiple task blocks
+- Two flow directions: horizontal (a b | c d) and vertical (a c | b d)
+- Global configuration system with `tasks-setup()`
+- Shorthand functions `tasks2`, `tasks3`, `tasks4`
+- Comprehensive parameter customization
+- Full documentation with examples and parameter reference
