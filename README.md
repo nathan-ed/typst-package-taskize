@@ -6,15 +6,16 @@ A Typst package for creating horizontal columned lists, similar to LaTeX's `task
 
 Click on an image to see the source code.
 
-| | | |
-|:---:|:---:|:---:|
-| [![Basic Tasks](gallery/basic.png)](gallery/basic.typ) | [![Math Exercises](gallery/math.png)](gallery/math.typ) | [![Custom Labels](gallery/labels.png)](gallery/labels.typ) |
-| Basic Tasks | Math Exercises | Custom Labels |
-| [![Vertical Flow](gallery/vertical.png)](gallery/vertical.typ) | [![Column Spanning](gallery/span.png)](gallery/span.typ) | [![Bold Labels](gallery/bold.png)](gallery/bold.typ) |
-| Vertical Flow | Column Spanning | Bold Labels |
+| | | | |
+|:---:|:---:|:---:|:---:|
+| [![Basic Tasks](gallery/basic.png)](gallery/basic.typ) | [![Math Exercises](gallery/math.png)](gallery/math.typ) | [![Custom Labels](gallery/labels.png)](gallery/labels.typ) | [![Styled Layout](gallery/styled.png)](gallery/styled.typ) |
+| Basic Tasks | Math Exercises | Custom Labels | Styled Layout |
+| [![Vertical Flow](gallery/vertical.png)](gallery/vertical.typ) | [![Column Spanning](gallery/span.png)](gallery/span.typ) | [![Bold Labels](gallery/bold.png)](gallery/bold.typ) | [![Resume Numbering](gallery/resume.png)](gallery/resume.typ) |
+| Vertical Flow | Column Spanning | Bold Labels | Resume Numbering |
 
 ## Features
 
+- **Indentation-independent parsing** - Output is completely independent of source code indentation
 - **Horizontal flow layout** - Items flow left-to-right across columns (like LaTeX's tasks)
 - **Flexible column counts** - 2, 3, 4 or any number of columns
 - **Column spanning** - Items can span multiple columns using `(N)` syntax
@@ -24,11 +25,16 @@ Click on an image to see the source code.
 - **Two flow directions** - Horizontal (a b | c d) or vertical (a c | b d)
 - **Global configuration** - Set defaults for all tasks in your document
 - **Shorthand functions** - `tasks2`, `tasks3`, `tasks4` for quick column setup
+- **Spacing & alignment controls** - Fine-grained gutters, label alignment, baselines, and block spacing
+
+## Manual
+
+A full manual is available in `docs/manual.pdf`, with a Typst source version in `docs/manual.typ`.
 
 ## Quick Start
 
 ```typst
-#import "@preview/taskize:0.2.0": tasks
+#import "@preview/taskize:0.2.6": tasks
 
 #tasks[
   + First item
@@ -43,7 +49,7 @@ Click on an image to see the source code.
 ### Simple Two-Column Layout
 
 ```typst
-#import "@preview/taskize:0.2.0": tasks
+#import "@preview/taskize:0.2.6": tasks
 
 #tasks[
   + $2 + 3 = ?$
@@ -56,7 +62,7 @@ Click on an image to see the source code.
 ### Three-Column Layout
 
 ```typst
-#import "@preview/taskize:0.2.0": tasks
+#import "@preview/taskize:0.2.6": tasks
 
 #tasks(columns: 3)[
   + Option A
@@ -71,7 +77,7 @@ Click on an image to see the source code.
 ### Shorthand Functions
 
 ```typst
-#import "@preview/taskize:0.2.0": tasks2, tasks3, tasks4
+#import "@preview/taskize:0.2.6": tasks2, tasks3, tasks4
 
 // Two columns
 #tasks2[
@@ -100,7 +106,7 @@ Click on an image to see the source code.
 ### Built-in Formats
 
 ```typst
-#import "@preview/taskize:0.2.0": tasks
+#import "@preview/taskize:0.2.6": tasks
 
 // Lowercase letters with parenthesis (default)
 #tasks(label: "a)")[+ One  + Two  + Three]
@@ -133,7 +139,7 @@ Click on an image to see the source code.
 ### Custom Label Function
 
 ```typst
-#import "@preview/taskize:0.2.0": tasks
+#import "@preview/taskize:0.2.6": tasks
 
 // Custom emoji labels
 #tasks(label: n => "Q" + str(n) + ":")[
@@ -150,7 +156,7 @@ Click on an image to see the source code.
 Items fill rows first: `a b | c d | e f`
 
 ```typst
-#import "@preview/taskize:0.2.0": tasks
+#import "@preview/taskize:0.2.6": tasks
 
 #tasks(columns: 2, flow: "horizontal")[
   + a
@@ -171,7 +177,7 @@ Items fill rows first: `a b | c d | e f`
 Items fill columns first: `a c e | b d f`
 
 ```typst
-#import "@preview/taskize:0.2.0": tasks
+#import "@preview/taskize:0.2.6": tasks
 
 #tasks(columns: 2, flow: "vertical")[
   + a
@@ -190,7 +196,7 @@ Items fill columns first: `a c e | b d f`
 ## Resuming Numbering
 
 ```typst
-#import "@preview/taskize:0.2.0": tasks, tasks-reset
+#import "@preview/taskize:0.2.6": tasks, tasks-reset
 
 #tasks[
   + First
@@ -219,7 +225,7 @@ Some text between task blocks...
 ## Starting from a Specific Number
 
 ```typst
-#import "@preview/taskize:0.2.0": tasks
+#import "@preview/taskize:0.2.6": tasks
 
 #tasks(start: 5)[
   + This is item 5
@@ -233,7 +239,7 @@ Some text between task blocks...
 Set defaults for all tasks in your document:
 
 ```typst
-#import "@preview/taskize:0.2.0": tasks, tasks-setup
+#import "@preview/taskize:0.2.6": tasks, tasks-setup
 
 // Configure global defaults
 #tasks-setup(
@@ -264,7 +270,7 @@ Set defaults for all tasks in your document:
 Control the vertical alignment of labels relative to content:
 
 ```typst
-#import "@preview/taskize:0.2.0": tasks
+#import "@preview/taskize:0.2.6": tasks
 
 // Center alignment (default)
 #tasks(label-baseline: "center")[
@@ -291,7 +297,7 @@ Control the vertical alignment of labels relative to content:
 Make labels stand out by using bold weight:
 
 ```typst
-#import "@preview/taskize:0.2.0": tasks
+#import "@preview/taskize:0.2.6": tasks
 
 // Bold labels for emphasis
 #tasks(label-weight: "bold")[
@@ -312,7 +318,7 @@ Make labels stand out by using bold weight:
 Items can span multiple columns using the `+()` or `+(N)` syntax (no space after `+`). This is similar to LaTeX's `\task*` command:
 
 ```typst
-#import "@preview/taskize:0.2.0": tasks
+#import "@preview/taskize:0.2.6": tasks
 
 #tasks(columns: 3)[
   + Short
@@ -394,7 +400,7 @@ Items can span multiple columns using the `+()` or `+(N)` syntax (no space after
 ### Math Exercise Sheet
 
 ```typst
-#import "@preview/taskize:0.2.0": tasks
+#import "@preview/taskize:0.2.6": tasks
 
 = Algebra Practice
 
@@ -420,7 +426,7 @@ Solve for $x$:
 ### Multiple Choice Questions
 
 ```typst
-#import "@preview/taskize:0.2.0": tasks
+#import "@preview/taskize:0.2.6": tasks
 
 *Question 1:* What is the capital of France?
 
@@ -444,7 +450,7 @@ Solve for $x$:
 ### Vocabulary List
 
 ```typst
-#import "@preview/taskize:0.2.0": tasks
+#import "@preview/taskize:0.2.6": tasks
 
 = French Vocabulary
 
@@ -487,6 +493,30 @@ MIT License - see LICENSE file for details.
 ## Changelog
 
 All notable changes to taskize are documented here.
+
+### [0.2.6] - 2026-01-23
+
+#### Added
+- Full manual (`docs/manual.typ` + `docs/manual.pdf`) with structured examples
+- Expanded gallery with styled configuration and resume numbering examples
+
+#### Changed
+- README gallery layout refreshed and feature list expanded
+- Documentation updated for the new manual and examples
+
+### [0.2.5] - 2026-01-20
+
+#### Fixed
+- **Indentation-independent parsing** - Tasks now render identically regardless of source code indentation
+  - All `+` items at any indentation level in the same `tasks[]` block are automatically flattened to the same level
+  - Inconsistent indentation no longer creates nested enums with different numbering
+  - Moving one character in the source no longer breaks the layout
+- **Column spanning support** - Fixed `+(2)` and `+()` syntax to work correctly with the new parser
+  - Handles both `enum.item` nodes and text nodes starting with "+"
+
+#### Changed
+- Internal parser completely rewritten to recursively extract and flatten all enum items
+- Parent items with nested enums (from indentation) have enum nodes stripped from their content
 
 ### [0.2.0] - 2026-01-15
 

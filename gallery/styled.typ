@@ -1,4 +1,4 @@
-#import "@preview/taskize:0.2.0": tasks, tasks-setup
+#import "@preview/taskize:0.2.6": tasks, tasks-setup
 
 #set page(width: 12cm, height: auto, margin: 1cm)
 
@@ -9,6 +9,8 @@
   label-format: "1)",
   column-gutter: 1.5em,
   row-gutter: 0.8em,
+  label-weight: "bold",
+  label-baseline: "center",
 )
 
 == Global Configuration
@@ -24,7 +26,7 @@
 
 == Four Columns
 
-#tasks(columns: 4)[
+#tasks(columns: 4, label-weight: "regular")[
   + A
   + B
   + C
@@ -37,7 +39,7 @@
 
 == With Indentation
 
-#tasks(indent: 2em, columns: 2)[
+#tasks(indent: 2em, columns: 2, label-weight: "bold")[
   + Indented item
   + Another one
   + Third item
