@@ -187,6 +187,41 @@
 }
 
 // =============================================================================
+// Content Classification
+// =============================================================================
+
+// Returns true if the content can be laid out inline (in a paragraph line).
+// Used to decide whether the label can share the first line with the content,
+// which gives true baseline alignment (fractions, vectors, etc. no longer
+// push the content below the label's baseline).
+// Conservative: anything unknown is treated as block-level, which falls back
+// to the previous top-aligned rendering.
+#let is-inline-content(node) = {
+  if type(node) != content {
+    return type(node) in (str, int, float, symbol)
+  }
+  let f = node.func()
+  if f == math.equation {
+    return not node.block
+  }
+  let fname = repr(f)
+  if fname in (
+    "text", "space", "linebreak", "h", "box",
+    "strong", "emph", "sub", "super", "underline", "overline", "strike",
+    "highlight", "smartquote", "link", "ref",
+  ) {
+    return true
+  }
+  if fname == "sequence" {
+    return node.children.all(is-inline-content)
+  }
+  if fname == "styled" {
+    return is-inline-content(node.child)
+  }
+  return false
+}
+
+// =============================================================================
 // Internal: Render tasks grid
 // =============================================================================
 
@@ -255,6 +290,49 @@
     ]
   }
 
+  // Baseline-aligned rendering: label and content share the same paragraph
+  // line, so their baselines match exactly even when the content starts with
+  // a tall element (display fraction, vector, ...). Wrapped lines are pushed
+  // past the label column with a hanging indent.
+  // Only used for inline content with the default label-baseline ("center");
+  // block content and explicit baseline offsets keep the grid-cell rendering.
+  let use-inline-baseline = lbl-baseline == "center"
+
+  let make-inline-cell(label, content, span) = {
+    let lbl = text(weight: lbl-weight)[#label]
+    let halign = if type(lbl-align) == alignment and lbl-align.x != none {
+      lbl-align.x
+    } else {
+      right
+    }
+    let label-box = box(width: actual-label-width, {
+      if halign == left { lbl; h(1fr) }
+      else if halign == center { h(1fr); lbl; h(1fr) }
+      else { h(1fr); lbl }
+    })
+    // Explicit par(): bare content in a grid cell is not a paragraph element,
+    // so a `set par(hanging-indent: ..)` rule would not apply to it.
+    grid.cell(colspan: span * 2, align(left + top, par(
+      hanging-indent: actual-label-width + indent-after,
+      [#label-box#h(indent-after)#content],
+    )))
+  }
+
+  // Build the cell(s) for one item: a single baseline-aligned cell when
+  // possible, otherwise the classic label cell + top-aligned content cell.
+  let make-item-cells(label, content, span) = {
+    if use-inline-baseline and is-inline-content(content) {
+      (make-inline-cell(label, content, span),)
+    } else if span == 1 {
+      (make-label-cell(label), make-content-cell(content))
+    } else {
+      (
+        make-label-cell(label),
+        grid.cell(colspan: span * 2 - 1, make-content-cell(content)),
+      )
+    }
+  }
+
   // Build grid content with column spans
   let grid-content = ()
 
@@ -288,8 +366,7 @@
             let num = start-num + item-idx
             let label = format-label(num, fmt)
 
-            grid-content.push(make-label-cell(label))
-            grid-content.push(make-content-cell(item-content))
+            grid-content += make-item-cells(label, item-content, 1)
           } else {
             // No more items, fill with empty cells
             grid-content.push([])
@@ -404,17 +481,8 @@
             let num = start-num + item-idx
             let label = format-label(num, fmt)
 
-            if span == 1 {
-              grid-content.push(make-label-cell(label))
-              grid-content.push(make-content-cell(item-content))
-              col += 1
-            } else {
-              // Multi-column span
-              let total-colspan = span * 2
-              grid-content.push(make-label-cell(label))
-              grid-content.push(grid.cell(colspan: total-colspan - 1, make-content-cell(item-content)))
-              col += span  // Skip the spanned columns
-            }
+            grid-content += make-item-cells(label, item-content, span)
+            col += span  // Skip the spanned columns
           }
         }
       }
@@ -444,18 +512,7 @@
       let num = start-num + i
       let label = format-label(num, fmt)
 
-      // Add label cell
-      if span == 1 {
-        // Single column: normal label + content
-        grid-content.push(make-label-cell(label))
-        grid-content.push(make-content-cell(item-content))
-      } else {
-        // Multi-column span: label + content spanning multiple columns
-        // Calculate colspan: each column is 2 grid cells (label + content)
-        let total-colspan = span * 2
-        grid-content.push(make-label-cell(label))
-        grid-content.push(grid.cell(colspan: total-colspan - 1, make-content-cell(item-content)))
-      }
+      grid-content += make-item-cells(label, item-content, span)
 
       current-col += span
     }

@@ -1,4 +1,4 @@
-#import "@preview/taskize:0.2.5": tasks, tasks2, tasks3, tasks4, tasks-reset, tasks-setup
+#import "@preview/taskize:0.2.6": tasks, tasks2, tasks3, tasks4, tasks-reset, tasks-setup
 
 // =============================================================================
 // DOCUMENT SETUP
@@ -104,7 +104,7 @@
 Import the package in your Typst document:
 
 ```typst
-#import "@preview/taskize:0.2.5": tasks
+#import "@preview/taskize:0.2.6": tasks
 ```
 
 == Quick Start
@@ -361,7 +361,7 @@ The `tasks()` function supports the following parameters:
   [row-gutter], [length], [0.6em], [Space between rows],
   [label-width], [auto/length], [auto], [Reserved width for labels],
   [label-align], [alignment], [right], [Label alignment],
-  [label-baseline], [string/length], ["center"], [Vertical alignment of labels],
+  [label-baseline], [string/length], ["center"], [Vertical alignment of labels. With `"center"` (default), inline content (text, math) shares the same paragraph line as the label for true baseline alignment. Use `"top"`, `"bottom"`, or a length offset to override.],
   [label-weight], [string], ["regular"], [Font weight for labels],
   [indent-after-label], [length], [0.4em], [Space after label],
   [indent], [length], [0pt], [Left indentation of the block],
