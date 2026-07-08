@@ -11,6 +11,9 @@
   label-format: "a)",           // "a)", "1)", "i)", "(a)", "(1)", custom function
   column-gutter: 1em,
   row-gutter: 0.6em,
+  max-columns: auto,           // auto = up to number of items for auto-fit
+  auto-fit-mode: "fill",       // "fill" = spans may use their span; "uniform" = every item must fit one column
+  auto-fit-tolerance: 0.5pt,   // measurement tolerance for wrap detection
   label-width: auto,            // auto or fixed width
   label-align: right,
   label-baseline: "center",     // "center", "top", "bottom", or length/auto
@@ -34,6 +37,9 @@
   label-format: none,
   column-gutter: none,
   row-gutter: none,
+  max-columns: none,
+  auto-fit-mode: none,
+  auto-fit-tolerance: none,
   label-width: none,
   label-align: none,
   label-baseline: none,
@@ -50,6 +56,9 @@
     if label-format != none { new.label-format = label-format }
     if column-gutter != none { new.column-gutter = column-gutter }
     if row-gutter != none { new.row-gutter = row-gutter }
+    if max-columns != none { new.max-columns = max-columns }
+    if auto-fit-mode != none { new.auto-fit-mode = auto-fit-mode }
+    if auto-fit-tolerance != none { new.auto-fit-tolerance = auto-fit-tolerance }
     if label-width != none { new.label-width = label-width }
     if label-align != none { new.label-align = label-align }
     if label-baseline != none { new.label-baseline = label-baseline }
@@ -206,7 +215,7 @@
   }
   let fname = repr(f)
   if fname in (
-    "text", "space", "linebreak", "h", "box",
+    "text", "space", "linebreak", "h",
     "strong", "emph", "sub", "super", "underline", "overline", "strike",
     "highlight", "smartquote", "link", "ref",
   ) {
@@ -224,6 +233,103 @@
 // =============================================================================
 // Internal: Render tasks grid
 // =============================================================================
+
+#let _is-auto-fit-columns(cols) = {
+  cols == "auto-fit" or cols == "fit"
+}
+
+#let _resolve-length(value) = {
+  if type(value) in (length, relative) {
+    measure(box(width: value)).width
+  } else {
+    value
+  }
+}
+
+#let _compute-label-width(task-items, fmt, lbl-width, lbl-weight, indent-after, start-num) = {
+  if lbl-width == auto {
+    let max-width = 0pt
+    for i in range(task-items.len()) {
+      let label = format-label(start-num + i, fmt)
+      let label-size = measure(text(weight: lbl-weight)[#label]).width
+      if label-size > max-width { max-width = label-size }
+    }
+    max-width + indent-after
+  } else {
+    lbl-width
+  }
+}
+
+#let _task-content-width(total-width, cols, span, lbl-width, col-gut, indent-after, indent) = {
+  let cols = calc.max(1, cols)
+  let span = calc.min(calc.max(1, span), cols)
+  let label-width = _resolve-length(lbl-width)
+  let column-gutter = _resolve-length(col-gut)
+  let label-gutter = _resolve-length(indent-after)
+  let block-indent = _resolve-length(indent)
+  let inner-width = total-width - block-indent
+  let fixed-width = cols * label-width + cols * label-gutter + (cols - 1) * column-gutter
+  let content-track = (inner-width - fixed-width) / cols
+  if content-track < 0pt { content-track = 0pt }
+  content-track * span + (span - 1) * (label-width + label-gutter + column-gutter)
+}
+
+#let _task-height-at-width(content, width) = {
+  measure(block(width: width, content)).height
+}
+
+#let _select-auto-fit-columns(
+  task-items,
+  max-cols,
+  fmt,
+  col-gut,
+  lbl-width,
+  lbl-weight,
+  indent-after,
+  indent,
+  start-num,
+  mode,
+  tolerance,
+  available-width,
+) = {
+  if task-items.len() == 0 { return 1 }
+
+  let max-cols = if max-cols == auto { task-items.len() } else { max-cols }
+  max-cols = calc.max(1, calc.min(max-cols, task-items.len()))
+  let label-width = _compute-label-width(task-items, fmt, lbl-width, lbl-weight, indent-after, start-num)
+  let tol = _resolve-length(tolerance)
+
+  let base-heights = ()
+  for item-data in task-items {
+    let content = item-data.at(0)
+    let width = _task-content-width(available-width, 1, 1, label-width, col-gut, indent-after, indent)
+    base-heights.push(_task-height-at-width(content, width))
+  }
+
+  let fits-cols(cols) = {
+    for (i, item-data) in task-items.enumerate() {
+      let content = item-data.at(0)
+      let span = if mode == "uniform" { 1 } else { calc.min(item-data.at(1), cols) }
+      let width = _task-content-width(available-width, cols, span, label-width, col-gut, indent-after, indent)
+      let natural-width = measure(content).width
+      let height = _task-height-at-width(content, width)
+      if natural-width > width + tol or height > base-heights.at(i) + tol {
+        return false
+      }
+    }
+    true
+  }
+
+  let best = 1
+  for cols in range(1, max-cols + 1) {
+    if fits-cols(cols) {
+      best = cols
+    } else {
+      break
+    }
+  }
+  best
+}
 
 #let render-tasks-grid(
   task-items,
@@ -245,17 +351,7 @@
   let num-items = task-items.len()
 
   // Calculate label width if auto
-  let actual-label-width = if lbl-width == auto {
-    let max-width = 0pt
-    for i in range(num-items) {
-      let label = format-label(start-num + i, fmt)
-      let label-size = measure(text(weight: lbl-weight)[#label]).width
-      if label-size > max-width { max-width = label-size }
-    }
-    max-width + indent-after
-  } else {
-    lbl-width
-  }
+  let actual-label-width = _compute-label-width(task-items, fmt, lbl-width, lbl-weight, indent-after, start-num)
 
   // Build grid columns (label + content pairs)
   let grid-columns = ()
@@ -345,7 +441,7 @@
     // First pass: check if any items have spans
     let has-spans = false
     for item-data in task-items {
-      if item-data.at(1) > 1 {
+      if calc.min(item-data.at(1), cols) > 1 {
         has-spans = true
         break
       }
@@ -399,7 +495,7 @@
 
       for item-idx in range(num-items) {
         let item-data = task-items.at(item-idx)
-        let span = item-data.at(1)
+        let span = calc.min(item-data.at(1), cols)
 
         // Find the column with minimum height that can accommodate this span
         let placed = false
@@ -477,7 +573,7 @@
             let item-idx = cell-value
             let item-data = task-items.at(item-idx)
             let item-content = item-data.at(0)
-            let span = item-data.at(1)
+            let span = calc.min(item-data.at(1), cols)
             let num = start-num + item-idx
             let label = format-label(num, fmt)
 
@@ -495,7 +591,7 @@
     for i in range(num-items) {
       let item-data = task-items.at(i)
       let item-content = item-data.at(0)
-      let span = item-data.at(1)
+      let span = calc.min(item-data.at(1), cols)
 
       // If current position would exceed columns, move to next row
       if current-col + span > cols {
@@ -572,6 +668,9 @@
   resume: false,
   column-gutter: auto,
   row-gutter: auto,
+  max-columns: auto,
+  auto-fit-mode: auto,
+  auto-fit-tolerance: auto,
   label-width: auto,
   label-align: auto,
   label-baseline: auto,
@@ -586,10 +685,13 @@
   let cfg = tasks-config.get()
 
   // Apply parameters (use provided value or fall back to config)
-  let cols = if columns == auto { cfg.columns } else { columns }
+  let requested-cols = if columns == auto { cfg.columns } else { columns }
   let fmt = if label != auto { label } else if label-format != auto { label-format } else { cfg.label-format }
   let col-gut = if column-gutter == auto { cfg.column-gutter } else { column-gutter }
   let row-gut = if row-gutter == auto { cfg.row-gutter } else { row-gutter }
+  let max-cols = if max-columns == auto { cfg.max-columns } else { max-columns }
+  let fit-mode = if auto-fit-mode == auto { cfg.auto-fit-mode } else { auto-fit-mode }
+  let fit-tolerance = if auto-fit-tolerance == auto { cfg.auto-fit-tolerance } else { auto-fit-tolerance }
   let lbl-width = if label-width == auto { cfg.label-width } else { label-width }
   let lbl-align = if label-align == auto { cfg.label-align } else { label-align }
   let lbl-baseline = if label-baseline == auto { cfg.label-baseline } else { label-baseline }
@@ -599,6 +701,11 @@
   let above-spacing = if above == auto { cfg.above } else { above }
   let below-spacing = if below == auto { cfg.below } else { below }
   let flow-dir = if flow == auto { cfg.flow } else { flow }
+  let span-parse-cols = if _is-auto-fit-columns(requested-cols) {
+    if max-cols == auto { 512 } else { max-cols }
+  } else {
+    requested-cols
+  }
 
   // Extract items from the body content - INDENTATION-INDEPENDENT PARSING
   // Strategy: Flatten ALL enum.item nodes at any depth into a single list
@@ -694,7 +801,7 @@
 
         // Parse span from cleaned body
         let (span, content-parsed) = if cleaned-body != none {
-          parse-span(cleaned-body, cols)
+          parse-span(cleaned-body, span-parse-cols)
         } else {
           (1, [])
         }
@@ -708,14 +815,14 @@
         items = items + nested
       } else {
         // No nesting - parse and add as-is
-        let (span, content-parsed) = parse-span(node.body, cols)
+        let (span, content-parsed) = parse-span(node.body, span-parse-cols)
         items.push((content-parsed, span))
       }
     } else if node.func() == text and node.text.starts-with("+") {
       // Handle +(N) and +() syntax which gets parsed as text (not enum.item)
       // This happens when there's no space after +
       let text-content = node.text.slice(1) // Remove the +
-      let (span, content) = parse-span(text-content, cols)
+      let (span, content) = parse-span(text-content, span-parse-cols)
       items.push((content, span))
     } else if node.has("children") {
       // Other content - check children for enums and text nodes, and
@@ -744,12 +851,28 @@
   }
 
   if task-items.len() > 0 {
-    render-tasks-grid(
-      task-items, cols, fmt, col-gut, row-gut,
-      lbl-width, lbl-align, lbl-baseline, lbl-weight, indent-after,
-      blk-indent, above-spacing, below-spacing,
-      flow-dir, start-num,
-    )
+    if _is-auto-fit-columns(requested-cols) {
+      assert(fit-mode in ("fill", "uniform"), message: "auto-fit-mode must be \"fill\" or \"uniform\"")
+      layout(size => {
+        let cols = _select-auto-fit-columns(
+          task-items, max-cols, fmt, col-gut, lbl-width, lbl-weight,
+          indent-after, blk-indent, start-num, fit-mode, fit-tolerance, size.width,
+        )
+        render-tasks-grid(
+          task-items, cols, fmt, col-gut, row-gut,
+          lbl-width, lbl-align, lbl-baseline, lbl-weight, indent-after,
+          blk-indent, above-spacing, below-spacing,
+          flow-dir, start-num,
+        )
+      })
+    } else {
+      render-tasks-grid(
+        task-items, requested-cols, fmt, col-gut, row-gut,
+        lbl-width, lbl-align, lbl-baseline, lbl-weight, indent-after,
+        blk-indent, above-spacing, below-spacing,
+        flow-dir, start-num,
+      )
+    }
   }
 }
 

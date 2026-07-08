@@ -1,4 +1,4 @@
-#import "lib.typ": tasks, tasks-setup
+#import "../lib.typ": tasks, tasks-setup
 
 #set page(width: 15cm, height: auto, margin: 1cm)
 

@@ -18,6 +18,7 @@ Click on an image to see the source code.
 - **Indentation-independent parsing** - Output is completely independent of source code indentation
 - **Horizontal flow layout** - Items flow left-to-right across columns (like LaTeX's tasks)
 - **Flexible column counts** - 2, 3, 4 or any number of columns
+- **Auto-fit columns** - Use the largest column count that does not introduce a new wrap or overflow
 - **Column spanning** - Items can span multiple columns using `(N)` syntax
 - **Multiple label formats** - Alphabetic (`a)`, `A)`), numeric (`1)`, `(1)`), roman (`i)`, `I)`), bullets, or custom
 - **Bold labels** - Make labels stand out with bold weight
@@ -29,12 +30,12 @@ Click on an image to see the source code.
 
 ## Manual
 
-A full manual is available as a [PDF](https://github.com/nathan-ed/typst-package-taskize/blob/dcaf94e1f50ca7481f6070215f2f505aae9eb1d2/docs/manual.pdf), with a Typst source version in [docs/manual.typ](https://github.com/nathan-ed/typst-package-taskize/blob/dcaf94e1f50ca7481f6070215f2f505aae9eb1d2/docs/manual.typ).
+A full manual is available as a [PDF](https://github.com/nathan-ed/typst-package-taskize/blob/main/docs/manual.pdf), with a Typst source version in [docs/manual.typ](https://github.com/nathan-ed/typst-package-taskize/blob/main/docs/manual.typ).
 
 ## Quick Start
 
 ```typst
-#import "@preview/taskize:0.2.6": tasks
+#import "@preview/taskize:0.2.7": tasks
 
 #tasks[
   + First item
@@ -49,7 +50,7 @@ A full manual is available as a [PDF](https://github.com/nathan-ed/typst-package
 ### Simple Two-Column Layout
 
 ```typst
-#import "@preview/taskize:0.2.6": tasks
+#import "@preview/taskize:0.2.7": tasks
 
 #tasks[
   + $2 + 3 = ?$
@@ -62,7 +63,7 @@ A full manual is available as a [PDF](https://github.com/nathan-ed/typst-package
 ### Three-Column Layout
 
 ```typst
-#import "@preview/taskize:0.2.6": tasks
+#import "@preview/taskize:0.2.7": tasks
 
 #tasks(columns: 3)[
   + Option A
@@ -74,10 +75,32 @@ A full manual is available as a [PDF](https://github.com/nathan-ed/typst-package
 ]
 ```
 
+### Auto-Fit Columns
+
+Use `columns: "auto-fit"` to choose the largest column count that does not make any item wrap or overflow compared with a one-column layout. Limit the search with `max-columns`.
+
+```typst
+#import "@preview/taskize:0.2.7": tasks
+
+#tasks(columns: "auto-fit", max-columns: 4)[
+  + Medium length task with detail
+  + Short
+  + Short
+  + Short
+]
+```
+
+By default, auto-fit uses `auto-fit-mode: "fill"`: span items such as `+()`
+may use their full row while later rows remain dense. Use
+`auto-fit-mode: "uniform"` when every item must fit one ordinary column; in
+that mode, a wide full-row span can force the whole task block to one column.
+If an item already wraps in the one-column layout, auto-fit keeps one column,
+because no no-wrap multi-column layout exists.
+
 ### Shorthand Functions
 
 ```typst
-#import "@preview/taskize:0.2.6": tasks2, tasks3, tasks4
+#import "@preview/taskize:0.2.7": tasks2, tasks3, tasks4
 
 // Two columns
 #tasks2[
@@ -106,7 +129,7 @@ A full manual is available as a [PDF](https://github.com/nathan-ed/typst-package
 ### Built-in Formats
 
 ```typst
-#import "@preview/taskize:0.2.6": tasks
+#import "@preview/taskize:0.2.7": tasks
 
 // Lowercase letters with parenthesis (default)
 #tasks(label: "a)")[+ One  + Two  + Three]
@@ -139,7 +162,7 @@ A full manual is available as a [PDF](https://github.com/nathan-ed/typst-package
 ### Custom Label Function
 
 ```typst
-#import "@preview/taskize:0.2.6": tasks
+#import "@preview/taskize:0.2.7": tasks
 
 // Custom emoji labels
 #tasks(label: n => "Q" + str(n) + ":")[
@@ -156,7 +179,7 @@ A full manual is available as a [PDF](https://github.com/nathan-ed/typst-package
 Items fill rows first: `a b | c d | e f`
 
 ```typst
-#import "@preview/taskize:0.2.6": tasks
+#import "@preview/taskize:0.2.7": tasks
 
 #tasks(columns: 2, flow: "horizontal")[
   + a
@@ -177,7 +200,7 @@ Items fill rows first: `a b | c d | e f`
 Items fill columns first: `a c e | b d f`
 
 ```typst
-#import "@preview/taskize:0.2.6": tasks
+#import "@preview/taskize:0.2.7": tasks
 
 #tasks(columns: 2, flow: "vertical")[
   + a
@@ -196,7 +219,7 @@ Items fill columns first: `a c e | b d f`
 ## Resuming Numbering
 
 ```typst
-#import "@preview/taskize:0.2.6": tasks, tasks-reset
+#import "@preview/taskize:0.2.7": tasks, tasks-reset
 
 #tasks[
   + First
@@ -225,7 +248,7 @@ Some text between task blocks...
 ## Starting from a Specific Number
 
 ```typst
-#import "@preview/taskize:0.2.6": tasks
+#import "@preview/taskize:0.2.7": tasks
 
 #tasks(start: 5)[
   + This is item 5
@@ -239,7 +262,7 @@ Some text between task blocks...
 Set defaults for all tasks in your document:
 
 ```typst
-#import "@preview/taskize:0.2.6": tasks, tasks-setup
+#import "@preview/taskize:0.2.7": tasks, tasks-setup
 
 // Configure global defaults
 #tasks-setup(
@@ -270,7 +293,7 @@ Set defaults for all tasks in your document:
 Control the vertical alignment of labels relative to content:
 
 ```typst
-#import "@preview/taskize:0.2.6": tasks
+#import "@preview/taskize:0.2.7": tasks
 
 // Center alignment (default)
 #tasks(label-baseline: "center")[
@@ -297,7 +320,7 @@ Control the vertical alignment of labels relative to content:
 Make labels stand out by using bold weight:
 
 ```typst
-#import "@preview/taskize:0.2.6": tasks
+#import "@preview/taskize:0.2.7": tasks
 
 // Bold labels for emphasis
 #tasks(label-weight: "bold")[
@@ -318,7 +341,7 @@ Make labels stand out by using bold weight:
 Items can span multiple columns using the `+()` or `+(N)` syntax (no space after `+`). This is similar to LaTeX's `\task*` command:
 
 ```typst
-#import "@preview/taskize:0.2.6": tasks
+#import "@preview/taskize:0.2.7": tasks
 
 #tasks(columns: 3)[
   + Short
@@ -359,13 +382,16 @@ Items can span multiple columns using the `+()` or `+(N)` syntax (no space after
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `columns` | int | 2 | Number of columns |
+| `columns` | int/string | 2 | Number of columns, or `"auto-fit"` to choose the largest no-wrap count |
 | `label` | string/function | `"a)"` | Label format (shorthand for `label-format`) |
 | `label-format` | string/function | `"a)"` | Label format |
 | `start` | int | 1 | Starting number for labels |
 | `resume` | bool | false | Continue numbering from previous block |
 | `column-gutter` | length | 1em | Space between columns |
 | `row-gutter` | length | 0.6em | Space between rows |
+| `max-columns` | int/auto | auto | Maximum column count tested by `columns: "auto-fit"`; `auto` means up to the number of items |
+| `auto-fit-mode` | string | `"fill"` | `"fill"` measures spans at their rendered width; `"uniform"` requires every item to fit one ordinary column |
+| `auto-fit-tolerance` | length | 0.5pt | Measurement tolerance for auto-fit wrap detection |
 | `label-width` | auto/length | auto | Width reserved for labels |
 | `label-align` | alignment | right | Label alignment |
 | `label-baseline` | string/length | `"center"` | Label vertical alignment: `"center"`, `"top"`, `"bottom"`, or length |
@@ -400,7 +426,7 @@ Items can span multiple columns using the `+()` or `+(N)` syntax (no space after
 ### Math Exercise Sheet
 
 ```typst
-#import "@preview/taskize:0.2.6": tasks
+#import "@preview/taskize:0.2.7": tasks
 
 = Algebra Practice
 
@@ -426,7 +452,7 @@ Solve for $x$:
 ### Multiple Choice Questions
 
 ```typst
-#import "@preview/taskize:0.2.6": tasks
+#import "@preview/taskize:0.2.7": tasks
 
 *Question 1:* What is the capital of France?
 
@@ -450,7 +476,7 @@ Solve for $x$:
 ### Vocabulary List
 
 ```typst
-#import "@preview/taskize:0.2.6": tasks
+#import "@preview/taskize:0.2.7": tasks
 
 = French Vocabulary
 
@@ -493,6 +519,11 @@ MIT License - see LICENSE file for details.
 ## Changelog
 
 All notable changes to taskize are documented here.
+
+### [0.2.7] - 2026-07-08
+
+#### Added
+- **Auto-fit columns** - `columns: "auto-fit"` selects the largest column count, bounded by `max-columns`, that does not introduce a new item wrap or fixed-size content overflow. `auto-fit-mode: "fill"` lets spans use their full rendered width, while `auto-fit-mode: "uniform"` requires every item to fit one ordinary column. Useful for exercises mixing short choices, longer text, math, spans, and small figures.
 
 ### [0.2.6] - 2026-07-02
 

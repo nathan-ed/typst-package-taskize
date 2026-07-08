@@ -1,4 +1,4 @@
-#import "@preview/taskize:0.2.6": tasks, tasks2, tasks3, tasks4, tasks-reset, tasks-setup
+#import "@preview/taskize:0.2.7": tasks, tasks2, tasks3, tasks4, tasks-reset, tasks-setup
 
 // =============================================================================
 // DOCUMENT SETUP
@@ -67,7 +67,7 @@
   #v(1cm)
   #text(size: 11pt)[
     A compact list layout for exercises and multiple-choice questions\
-    Version 0.2.6\
+    Version 0.2.7\
     Nathan Scheinmann
   ]
 ]
@@ -95,6 +95,7 @@
 - Indentation-independent parsing
 - Horizontal or vertical flow directions
 - Flexible column counts and column spanning
+- Auto-fit column selection for the densest no-wrap layout
 - Multiple label formats and custom label functions
 - Resume numbering across task blocks
 - Fine-grained spacing and alignment controls
@@ -104,7 +105,7 @@
 Import the package in your Typst document:
 
 ```typst
-#import "@preview/taskize:0.2.6": tasks
+#import "@preview/taskize:0.2.7": tasks
 ```
 
 == Quick Start
@@ -177,6 +178,36 @@ Use `columns:` or shorthand functions (`tasks2`, `tasks3`, `tasks4`) for quick l
     + Item 6
   ]]
 )
+
+== Auto-Fit Columns
+
+Use `columns: "auto-fit"` to select the largest column count that does not
+introduce a new item wrap or fixed-size content overflow. Limit the search
+with `max-columns:`.
+
+#example(
+  [```typst
+  #tasks(columns: "auto-fit", max-columns: 4)[
+    + Medium length task with detail
+    + Short
+    + Short
+    + Short
+  ]
+  ```],
+  [#tasks(columns: "auto-fit", max-columns: 4)[
+    + Medium length task with detail
+    + Short
+    + Short
+    + Short
+  ]]
+)
+
+By default, auto-fit uses `auto-fit-mode: "fill"`: span items such as `+()`
+may use their full row while later rows remain dense. Use
+`auto-fit-mode: "uniform"` when every item must fit one ordinary column; in
+that mode, a wide full-row span can force the whole task block to one column.
+If an item already wraps in the one-column layout, auto-fit keeps one column,
+because no no-wrap multi-column layout exists.
 
 == Labels and Formats
 
@@ -352,13 +383,16 @@ The `tasks()` function supports the following parameters:
   stroke: (x: none, y: 0.3pt + luma(85%)),
   inset: 6pt,
   [*Parameter*], [*Type*], [*Default*], [*Description*],
-  [columns], [int], [2], [Number of columns],
+  [columns], [int/string], [2], [Number of columns, or `"auto-fit"` for the largest no-wrap count],
   [label], [string/function], ["a)"], [Label format shorthand],
   [label-format], [string/function], ["a)"], [Explicit label format],
   [start], [int], [1], [Starting number],
   [resume], [bool], [false], [Continue numbering from previous tasks],
   [column-gutter], [length], [1em], [Space between columns],
   [row-gutter], [length], [0.6em], [Space between rows],
+  [max-columns], [int/auto], [auto], [Maximum column count tested by auto-fit; `auto` means up to the number of items],
+  [auto-fit-mode], [string], ["fill"], [`"fill"` measures spans at their rendered width; `"uniform"` requires every item to fit one ordinary column],
+  [auto-fit-tolerance], [length], [0.5pt], [Measurement tolerance for auto-fit wrap detection],
   [label-width], [auto/length], [auto], [Reserved width for labels],
   [label-align], [alignment], [right], [Label alignment],
   [label-baseline], [string/length], ["center"], [Vertical alignment of labels. With `"center"` (default), inline content (text, math) shares the same paragraph line as the label for true baseline alignment. Use `"top"`, `"bottom"`, or a length offset to override.],
