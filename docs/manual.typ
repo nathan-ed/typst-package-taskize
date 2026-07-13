@@ -466,6 +466,55 @@ Horizontal is default. Use `flow: "vertical"` to fill columns top-to-bottom.
   ]]
 )
 
+== Adaptive Row Heights
+
+Rows containing tall inline math (display fractions, matrices, big
+operators) normally report a height based on the font's text edges, not
+the actual ink — so the math bleeds into the row-gutter and rows look
+glued together. Pass `row-gutter: "auto"` (or `"adaptive"`) to size rows
+by their true ink: the configured numeric gutter (default `0.6em`)
+becomes the real visual gap, and rows with ordinary content keep exactly
+the same spacing as before.
+
+#example(
+  [```typst
+  #show math.frac: it => math.display(it)
+  // ink bleeds into the gutter:
+  #tasks(columns: 2)[
+    + $1/2$
+    + $3/4$
+    + $5/6$
+    + $7/8$
+  ]
+  // rows sized to true ink:
+  #tasks(columns: 2, row-gutter: "auto")[
+    + $1/2$
+    + $3/4$
+    + $5/6$
+    + $7/8$
+  ]
+  ```],
+  [
+    #show math.frac: it => math.display(it)
+    #tasks(columns: 2)[
+      + $1/2$
+      + $3/4$
+      + $5/6$
+      + $7/8$
+    ]
+    #v(0.5em)
+    #tasks(columns: 2, row-gutter: "auto")[
+      + $1/2$
+      + $3/4$
+      + $5/6$
+      + $7/8$
+    ]
+  ]
+)
+
+It can be made the document default with `#tasks-setup(row-gutter: "adaptive")`;
+an explicit numeric `row-gutter` on a `tasks` call still overrides it.
+
 // =============================================================================
 // CONFIGURATION
 // =============================================================================
@@ -575,7 +624,7 @@ The `tasks()` function supports the following parameters:
   [start], [int], [1], [Starting number],
   [resume], [bool], [false], [Continue numbering from previous tasks],
   [column-gutter], [length], [1em], [Space between columns],
-  [row-gutter], [length], [0.6em], [Space between rows],
+  [row-gutter], [length/string], [0.6em], [Space between rows. `"auto"` (or `"adaptive"`) sizes rows to the true ink of their content — tall inline math (display fractions, matrices) no longer bleeds into the gutter — while keeping the configured numeric gutter as the visual gap],
   [max-columns], [int/auto], [auto], [Maximum column count tested by auto-fit; `auto` means up to the number of items],
   [auto-fit-mode], [string], ["fill"], [`"fill"` measures spans at their rendered width; `"uniform"` requires every item to fit one ordinary column],
   [auto-fit-tolerance], [length], [0.5pt], [Measurement tolerance for auto-fit wrap detection],
