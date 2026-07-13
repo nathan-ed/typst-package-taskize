@@ -94,12 +94,14 @@ Use `columns: "auto-fit"` to choose the largest column count that does not make 
 ]
 ```
 
-By default, auto-fit uses `auto-fit-mode: "fill"`: span items such as `+()`
-may use their full row while later rows remain dense. Use
-`auto-fit-mode: "uniform"` when every item must fit one ordinary column; in
-that mode, a wide full-row span can force the whole task block to one column.
-If an item already wraps in the one-column layout, auto-fit keeps one column,
-because no no-wrap multi-column layout exists.
+By default, auto-fit uses `auto-fit-mode: "fill"`: an item too wide for one
+column automatically spans the minimum number of columns it needs — no
+explicit `+(N)` required — so wide items share rows with densely packed short
+items. Use `auto-fit-mode: "uniform"` when every item must fit one ordinary
+column; in that mode, the column count is the largest value where no item
+wraps at one-column width, so a wide item can force the whole block to fewer
+columns. If an item already wraps in the one-column layout, auto-fit keeps
+one column, because no no-wrap multi-column layout exists.
 
 ### Shorthand Functions
 
