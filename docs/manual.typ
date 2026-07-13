@@ -182,19 +182,22 @@ Use `columns:` or shorthand functions (`tasks2`, `tasks3`, `tasks4`) for quick l
 == Auto-Fit Columns
 
 Use `columns: "auto-fit"` to select the largest column count that does not
-introduce a new item wrap or fixed-size content overflow. Limit the search
-with `max-columns:`.
+introduce a new item wrap or fixed-size content overflow. By default the
+search goes up to the number of items, so no other option is needed;
+use `max-columns:` only to cap the search.
 
 #example(
   [```typst
-  #tasks(columns: "auto-fit", max-columns: 4)[
+  // No max-columns needed: auto-fit tries up to one
+  // column per item and picks the densest layout.
+  #tasks(columns: "auto-fit")[
     + Medium length task with detail
     + Short
     + Short
     + Short
   ]
   ```],
-  [#tasks(columns: "auto-fit", max-columns: 4)[
+  [#tasks(columns: "auto-fit")[
     + Medium length task with detail
     + Short
     + Short
@@ -202,12 +205,195 @@ with `max-columns:`.
   ]]
 )
 
-By default, auto-fit uses `auto-fit-mode: "fill"`: span items such as `+()`
-may use their full row while later rows remain dense. Use
-`auto-fit-mode: "uniform"` when every item must fit one ordinary column; in
-that mode, a wide full-row span can force the whole task block to one column.
+By default, auto-fit uses `auto-fit-mode: "fill"`: span items may use their
+full row while later rows remain dense. Use `auto-fit-mode: "uniform"` when
+every item must fit one ordinary column; in that mode, the column count is the
+largest value where no item wraps when measured at one-column width, so a wide
+span item can force the whole block to one column.
 If an item already wraps in the one-column layout, auto-fit keeps one column,
 because no no-wrap multi-column layout exists.
+
+A wide item auto-spans to fill the row in `"fill"` mode, while
+`"uniform"` keeps every item in one column and falls back to fewer columns
+when the widest item no longer fits.
+
+#example(
+  [```typst
+  // fill: wide instruction auto-spans; cities pack into 4 cols.
+  #tasks(columns: "auto-fit", auto-fit-mode: "fill",
+         max-columns: 4)[
+    + Choose the correct answer for each question below.
+    + Paris
+    + London
+    + Berlin
+    + Rome
+  ]
+  ```],
+  [
+    #text(size: 8pt, style: "italic")[`"fill"`, max 4 — instruction spans full row; answers in 4 cols:]
+    #v(0.3em)
+    #tasks(columns: "auto-fit", auto-fit-mode: "fill", max-columns: 4)[
+      + Choose the correct answer for each question below.
+      + Paris
+      + London
+      + Berlin
+      + Rome
+    ]
+  ]
+)
+
+#example(
+  [```typst
+  // uniform: instruction too wide for one column at 2+ cols;
+  // auto-fit falls back to a single column.
+  #tasks(columns: "auto-fit", auto-fit-mode: "uniform",
+         max-columns: 4)[
+    + Choose the correct answer for each question below.
+    + Paris
+    + London
+    + Berlin
+    + Rome
+  ]
+  ```],
+  [
+    #text(size: 8pt, style: "italic")[`"uniform"`, max 4 — instruction forces 1-column layout:]
+    #v(0.3em)
+    #tasks(columns: "auto-fit", auto-fit-mode: "uniform", max-columns: 4)[
+      + Choose the correct answer for each question below.
+      + Paris
+      + London
+      + Berlin
+      + Rome
+    ]
+  ]
+)
+
+With medium-length items (shorter than the full row but still wider than
+one narrow column), `"fill"` auto-spans and keeps the maximum column count
+while `"uniform"` backs off to the column count where the item fits in one
+column slot. The same difference applies with 2 or 3 columns.
+
+#example(
+  [```typst
+  // fill, max 2: medium item auto-spans both cols (= full
+  // row); two short items fill row 2 side by side.
+  #tasks(columns: "auto-fit", auto-fit-mode: "fill",
+         max-columns: 2)[
+    + Medium length task with detail
+    + Short
+    + Short
+  ]
+  ```],
+  [
+    #text(size: 8pt, style: "italic")[`"fill"`, max 2 — medium item spans full row; shorts in 2 cols:]
+    #v(0.3em)
+    #tasks(columns: "auto-fit", auto-fit-mode: "fill", max-columns: 2)[
+      + Medium length task with detail
+      + Short
+      + Short
+    ]
+  ]
+)
+
+#example(
+  [```typst
+  // uniform, max 2: medium item too wide for one col at 2
+  // cols; auto-fit falls back to a single column.
+  #tasks(columns: "auto-fit", auto-fit-mode: "uniform",
+         max-columns: 2)[
+    + Medium length task with detail
+    + Short
+    + Short
+  ]
+  ```],
+  [
+    #text(size: 8pt, style: "italic")[`"uniform"`, max 2 — medium item forces 1-column layout:]
+    #v(0.3em)
+    #tasks(columns: "auto-fit", auto-fit-mode: "uniform", max-columns: 2)[
+      + Medium length task with detail
+      + Short
+      + Short
+    ]
+  ]
+)
+
+#example(
+  [```typst
+  // fill, max 3: medium item auto-spans; 3 cols.
+  #tasks(columns: "auto-fit", auto-fit-mode: "fill",
+         max-columns: 3)[
+    + Medium length task
+    + Short
+    + Short
+    + Short
+  ]
+  // uniform, max 3: medium item must fit one column;
+  // backs off to 2 columns where it does.
+  #tasks(columns: "auto-fit", auto-fit-mode: "uniform",
+         max-columns: 3)[
+    + Medium length task
+    + Short
+    + Short
+    + Short
+  ]
+  ```],
+  [
+    #text(size: 8pt, style: "italic")[`"fill"` vs `"uniform"`, max 3 — fill gives 3 cols, uniform gives 2:]
+    #v(0.3em)
+    #tasks(columns: "auto-fit", auto-fit-mode: "fill", max-columns: 3)[
+      + Medium length task
+      + Short
+      + Short
+      + Short
+    ]
+    #v(0.5em)
+    #tasks(columns: "auto-fit", auto-fit-mode: "uniform", max-columns: 3)[
+      + Medium length task
+      + Short
+      + Short
+      + Short
+    ]
+  ]
+)
+
+#example(
+  [```typst
+  // fill, max 4: medium item auto-spans; 4 cols.
+  #tasks(columns: "auto-fit", auto-fit-mode: "fill",
+         max-columns: 4)[
+    + Medium length task
+    + Short
+    + Short
+    + Short
+  ]
+  // uniform, max 4: medium item must fit one column;
+  // backs off to 2 columns where it does.
+  #tasks(columns: "auto-fit", auto-fit-mode: "uniform",
+         max-columns: 4)[
+    + Medium length task
+    + Short
+    + Short
+    + Short
+  ]
+  ```],
+  [
+    #text(size: 8pt, style: "italic")[`"fill"` vs `"uniform"`, max 4 — fill gives 4 cols, uniform gives 2:]
+    #v(0.3em)
+    #tasks(columns: "auto-fit", auto-fit-mode: "fill", max-columns: 4)[
+      + Medium length task
+      + Short
+      + Short
+      + Short
+    ]
+    #v(0.5em)
+    #tasks(columns: "auto-fit", auto-fit-mode: "uniform", max-columns: 4)[
+      + Medium length task
+      + Short
+      + Short
+      + Short
+    ]
+  ]
+)
 
 == Labels and Formats
 

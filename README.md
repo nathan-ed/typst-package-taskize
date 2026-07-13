@@ -524,10 +524,11 @@ MIT License - see LICENSE file for details.
 
 All notable changes to taskize are documented here.
 
-### [0.2.7] - 2026-07-08
+### [0.2.7] - 2026-07-13
 
 #### Added
-- **Auto-fit columns** - `columns: "auto-fit"` selects the largest column count, bounded by `max-columns`, that does not introduce a new item wrap or fixed-size content overflow. `auto-fit-mode: "fill"` lets spans use their full rendered width, while `auto-fit-mode: "uniform"` requires every item to fit one ordinary column. Useful for exercises mixing short choices, longer text, math, spans, and small figures.
+- **Auto-fit columns** - `columns: "auto-fit"` selects the largest column count, bounded by `max-columns` (default: up to the number of items), that does not introduce a new item wrap or fixed-size content overflow. Useful for exercises mixing short choices, longer text, math, spans, and small figures.
+- **Auto-spanning in fill mode** - with `auto-fit-mode: "fill"` (default), a regular `+` item too wide for one column automatically spans the minimum number of columns it needs — no explicit `+(N)` required — so wide items share rows with densely packed short items. `auto-fit-mode: "uniform"` instead requires every item to fit one ordinary column and falls back to fewer columns when the widest item no longer fits.
 
 ### [0.2.6] - 2026-07-02
 

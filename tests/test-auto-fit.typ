@@ -125,47 +125,61 @@
     message: "max-columns: auto should not be more restrictive than an explicit six",
   )
 
-  // --- Wrapping prevention -------------------------------------------------
+  // --- Wrapping prevention (uniform mode) ----------------------------------
 
   assert(
-    choose((([Medium length task with detail], 1), ([B], 1), ([C], 1), ([D], 1)), 4) == 2,
-    message: "medium text should reduce to two columns",
+    choose((([Medium length task with detail], 1), ([B], 1), ([C], 1), ([D], 1)), 4, mode: "uniform") == 2,
+    message: "uniform: medium text should reduce to two columns",
   )
 
   assert(
-    choose(medium4, 4) == 2,
-    message: "two medium tasks should reduce to two columns",
+    choose(medium4, 4, mode: "uniform") == 2,
+    message: "uniform: two medium tasks should reduce to two columns",
+  )
+
+  // --- Auto-spanning (fill mode) -------------------------------------------
+  // In fill mode a regular item that is too wide for one column can span
+  // multiple columns, so auto-fit selects more columns than uniform mode.
+
+  assert(
+    choose(medium4, 4) >= choose(medium4, 4, mode: "uniform"),
+    message: "fill: medium items auto-span, selecting at least as many columns as uniform",
   )
 
   assert(
-    choose((([This item is intentionally extremely long, long enough to wrap even before the task block is split into columns, so auto-fit cannot find a no-wrap multi-column layout.], 1), ([B], 1)), 4) == 1,
-    message: "already-wrapping content should stay at one column",
+    choose(medium4, 4) > 1,
+    message: "fill: medium items should not force single-column layout",
   )
 
   assert(
-    choose(medium4, 4, col-gut: 2cm) == 1,
-    message: "large column gutter should reduce available width",
+    choose((([This item is intentionally extremely long, long enough to wrap even before the task block is split into columns, so auto-fit cannot find a no-wrap multi-column layout.], 1), ([B], 1)), 4, mode: "uniform") == 1,
+    message: "uniform: already-wrapping content should stay at one column",
   )
 
   assert(
-    choose(medium4, 4, indent: 3cm) == 1,
-    message: "large task indentation should reduce available width",
+    choose(medium4, 4, col-gut: 2cm, mode: "uniform") == 1,
+    message: "uniform: large column gutter should reduce available width",
   )
 
   assert(
-    choose(medium4, 4, lbl-width: 2cm) == 1,
-    message: "fixed wide label column should reduce available width",
+    choose(medium4, 4, indent: 3cm, mode: "uniform") == 1,
+    message: "uniform: large task indentation should reduce available width",
   )
 
   assert(
-    choose(medium4, 4, fmt: n => "Question " + str(n) + ":") == 1,
-    message: "long labels should be accounted for",
+    choose(medium4, 4, lbl-width: 2cm, mode: "uniform") == 1,
+    message: "uniform: fixed wide label column should reduce available width",
   )
 
   assert(
-    choose((([Alpha], 1), ([Beta], 1), ([Gamma], 1), ([Delta], 1), ([Epsilon], 1), ([Zeta], 1)), 6, start-num: 98, fmt: "1)") <
-      choose((([Alpha], 1), ([Beta], 1), ([Gamma], 1), ([Delta], 1), ([Epsilon], 1), ([Zeta], 1)), 6),
-    message: "wide numeric labels near 100 should reduce the selected column count",
+    choose(medium4, 4, fmt: n => "Question " + str(n) + ":", mode: "uniform") == 1,
+    message: "uniform: long labels should be accounted for",
+  )
+
+  assert(
+    choose((([Alpha], 1), ([Beta], 1), ([Gamma], 1), ([Delta], 1), ([Epsilon], 1), ([Zeta], 1)), 6, start-num: 98, fmt: "1)", mode: "uniform") <
+      choose((([Alpha], 1), ([Beta], 1), ([Gamma], 1), ([Delta], 1), ([Epsilon], 1), ([Zeta], 1)), 6, mode: "uniform"),
+    message: "uniform: wide numeric labels near 100 should reduce the selected column count",
   )
 
   assert(
@@ -190,13 +204,19 @@
   )
 
   assert(
-    choose(((test-box(2.6cm), 1), ([B], 1), ([C], 1), ([D], 1)), 4) == 3,
-    message: "a 2.6cm fixed item should fit three but not four columns",
+    choose(((test-box(2.6cm), 1), ([B], 1), ([C], 1), ([D], 1)), 4, mode: "uniform") == 3,
+    message: "uniform: a 2.6cm fixed item should fit three but not four columns",
   )
 
   assert(
-    choose(((test-box(4.1cm), 1), ([B], 1), ([C], 1), ([D], 1)), 4) == 2,
-    message: "a 4.1cm fixed item should fit two but not three columns",
+    choose(((test-box(4.1cm), 1), ([B], 1), ([C], 1), ([D], 1)), 4, mode: "uniform") == 2,
+    message: "uniform: a 4.1cm fixed item should fit two but not three columns",
+  )
+
+  assert(
+    choose(((test-box(2.6cm), 1), ([B], 1), ([C], 1), ([D], 1)), 4) >=
+      choose(((test-box(2.6cm), 1), ([B], 1), ([C], 1), ([D], 1)), 4, mode: "uniform"),
+    message: "fill: auto-spanning should select at least as many columns as uniform for fixed items",
   )
 
   // --- Math and explicit multiline content --------------------------------
@@ -207,13 +227,13 @@
   )
 
   assert(
-    choose((([$f'(0)$ for $f(x)=x^2+3x$], 1), ([$2x-3=0$], 1), ([Short], 1), ([Short], 1)), 4) == 2,
-    message: "medium inline math/text should reduce to two columns",
+    choose((([$f'(0)$ for $f(x)=x^2+3x$], 1), ([$2x-3=0$], 1), ([Short], 1), ([Short], 1)), 4, mode: "uniform") == 2,
+    message: "uniform: medium inline math/text should reduce to two columns",
   )
 
   assert(
-    choose((([$integral_0^1 (x^2+3x+1) dif x$], 1), ([$lim_(x -> 0) sin(x) / x$], 1), ([Short], 1), ([Short], 1)), 4) < 4,
-    message: "long inline math should reduce before formula wrapping",
+    choose((([$integral_0^1 (x^2+3x+1) dif x$], 1), ([$lim_(x -> 0) sin(x) / x$], 1), ([Short], 1), ([Short], 1)), 4, mode: "uniform") < 4,
+    message: "uniform: long inline math should reduce before formula wrapping",
   )
 
   assert(
@@ -222,13 +242,13 @@
   )
 
   assert(
-    choose((([First line\ an intentionally longer second line], 1), ([Short], 1), ([Short], 1)), 3) < 3,
-    message: "explicit multiline content should still reject newly wrapped lines",
+    choose((([First line\ an intentionally longer second line], 1), ([Short], 1), ([Short], 1)), 3, mode: "uniform") < 3,
+    message: "uniform: explicit multiline content should still reject newly wrapped lines",
   )
 
   assert(
-    choose((([supercalifragilisticexpialidocioussupercalifragilisticexpialidocioussupercalifragilisticexpialidocious], 1), ([Short], 1), ([Short], 1)), 3) == 1,
-    message: "unbreakable words too wide for one-column layout should stay at one column",
+    choose((([supercalifragilisticexpialidocioussupercalifragilisticexpialidocioussupercalifragilisticexpialidocious], 1), ([Short], 1), ([Short], 1)), 3, mode: "uniform") == 1,
+    message: "uniform: unbreakable words too wide for one-column layout should stay at one column",
   )
 
   assert(
@@ -237,11 +257,11 @@
   )
 
   assert(
-    choose(((block(width: 3.8cm, height: 8mm, fill: luma(94%)), 1), ([Short], 1), ([Short], 1), ([Short], 1)), 4) < 4,
-    message: "wide block content should reduce selected columns",
+    choose(((block(width: 3.8cm, height: 8mm, fill: luma(94%)), 1), ([Short], 1), ([Short], 1), ([Short], 1)), 4, mode: "uniform") < 4,
+    message: "uniform: wide block content should reduce selected columns",
   )
 
-  // --- Fixed-size content and figures -------------------------------------
+  // --- Fixed-size content and figures (uniform) ----------------------------
 
   assert(
     choose(((test-box(1.5cm), 1), ([B], 1), ([C], 1)), 4) == 3,
@@ -249,13 +269,13 @@
   )
 
   assert(
-    choose(((test-box(3cm), 1), ([B], 1), ([C], 1)), 4) < 4,
-    message: "wide fixed-size figure should reduce the selected column count",
+    choose(((test-box(3cm), 1), ([B], 1), ([C], 1)), 4, mode: "uniform") < 4,
+    message: "uniform: wide fixed-size figure should reduce the selected column count",
   )
 
   assert(
-    choose(((test-box(8cm), 1), ([B], 1), ([C], 1)), 4) == 1,
-    message: "very wide fixed-size figure should force one column",
+    choose(((test-box(8cm), 1), ([B], 1), ([C], 1)), 4, mode: "uniform") == 1,
+    message: "uniform: very wide fixed-size figure should force one column",
   )
 
   assert(
@@ -269,13 +289,13 @@
   )
 
   assert(
-    choose(((test-figure(3.8cm), 1), ([Text], 1), ([$a^2+b^2=c^2$], 1), ([D], 1)), 4) < 4,
-    message: "wide figure blocks should reduce selected columns",
+    choose(((test-figure(3.8cm), 1), ([Text], 1), ([$a^2+b^2=c^2$], 1), ([D], 1)), 4, mode: "uniform") < 4,
+    message: "uniform: wide figure blocks should reduce selected columns",
   )
 
   assert(
-    choose(((test-figure(1.8cm, caption: [a longer caption that would wrap in narrow columns]), 1), ([Text], 1), ([Short], 1)), 3) < 3,
-    message: "figure captions should participate in wrap detection",
+    choose(((test-figure(1.8cm, caption: [a longer caption that would wrap in narrow columns]), 1), ([Text], 1), ([Short], 1)), 3, mode: "uniform") < 3,
+    message: "uniform: figure captions should participate in wrap detection",
   )
 
   // --- Span modes ----------------------------------------------------------
@@ -395,6 +415,44 @@ Auto-fit:
     second line
   + Short
   + Short
+]
+
+== Fill mode: wide text auto-spans, short items pack densely
+
+#tasks(columns: "auto-fit", auto-fit-mode: "fill", max-columns: 4)[
+  + Choose the correct answer for each question below.
+  + Paris
+  + London
+  + Berlin
+  + Rome
+]
+
+== Uniform mode: same content forces one column
+
+#tasks(columns: "auto-fit", auto-fit-mode: "uniform", max-columns: 4)[
+  + Choose the correct answer for each question below.
+  + Paris
+  + London
+  + Berlin
+  + Rome
+]
+
+== Fill mode: medium item auto-spans 2, short items fill remaining cols
+
+#tasks(columns: "auto-fit", auto-fit-mode: "fill", max-columns: 4)[
+  + Medium length task with detail
+  + A
+  + B
+  + C
+]
+
+== Uniform mode: medium item forces 2-col layout
+
+#tasks(columns: "auto-fit", auto-fit-mode: "uniform", max-columns: 4)[
+  + Medium length task with detail
+  + A
+  + B
+  + C
 ]
 
 == Spans in fill mode: full-width row, then dense rows
