@@ -1,5 +1,9 @@
 # taskize
 
+[![taskize on Typst Universe](https://img.shields.io/badge/Typst_Universe-v._0.2.7-239dad?labelColor=eee)](https://typst.app/universe/package/taskize)
+[![Full package manual as PDF](https://img.shields.io/badge/Manual-pdf-333333?labelColor=eee)](https://github.com/nathan-ed/typst-package-taskize/blob/PLACEHOLDER_SHA/docs/manual.pdf)
+[![Distributed under the MIT license](https://img.shields.io/badge/License-MIT-333333?labelColor=eee)](LICENSE)
+
 A Typst package for creating horizontal columned lists, similar to LaTeX's `tasks` package. Perfect for exercises, multiple-choice questions, and any content that benefits from a compact columned layout.
 
 ## Gallery
@@ -30,7 +34,7 @@ Click on an image to see the source code.
 
 ## Manual
 
-A full manual is available as a [PDF](https://github.com/nathan-ed/typst-package-taskize/blob/main/docs/manual.pdf), with a Typst source version in [docs/manual.typ](https://github.com/nathan-ed/typst-package-taskize/blob/main/docs/manual.typ).
+A full manual is available as a [PDF](https://github.com/nathan-ed/typst-package-taskize/blob/PLACEHOLDER_SHA/docs/manual.pdf), with a Typst source version in [docs/manual.typ](https://github.com/nathan-ed/typst-package-taskize/blob/PLACEHOLDER_SHA/docs/manual.typ).
 
 ## Quick Start
 
