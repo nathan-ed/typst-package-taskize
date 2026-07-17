@@ -1,5 +1,5 @@
 // Adaptive row heights: row-gutter: "auto" keeps tall math out of the gutter.
-#import "@preview/taskize:0.2.7": tasks
+#import "@preview/taskize:0.2.8": tasks
 
 #set page(width: 11cm, height: auto, margin: 6mm)
 #set text(size: 11pt)

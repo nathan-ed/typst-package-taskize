@@ -1,4 +1,4 @@
-#import "@preview/taskize:0.2.7": tasks, tasks2, tasks3, tasks4, tasks-reset, tasks-setup
+#import "@preview/taskize:0.2.8": tasks, tasks2, tasks3, tasks4, tasks-reset, tasks-setup, taskize-wrap-zone
 
 // =============================================================================
 // DOCUMENT SETUP
@@ -67,7 +67,7 @@
   #v(1cm)
   #text(size: 11pt)[
     A compact list layout for exercises and multiple-choice questions\
-    Version 0.2.7\
+    Version 0.2.8\
     Nathan Scheinmann
   ]
 ]
@@ -99,13 +99,14 @@
 - Multiple label formats and custom label functions
 - Resume numbering across task blocks
 - Fine-grained spacing and alignment controls
+- Wrap zone to flow rows around reserved overlay space (QR codes, stamps)
 
 == Installation
 
 Import the package in your Typst document:
 
 ```typst
-#import "@preview/taskize:0.2.7": tasks
+#import "@preview/taskize:0.2.8": tasks
 ```
 
 == Quick Start
@@ -515,6 +516,68 @@ the same spacing as before.
 It can be made the document default with `#tasks-setup(row-gutter: "adaptive")`;
 an explicit numeric `row-gutter` on a `tasks` call still overrides it.
 
+== Wrap Zone <wrap-zone>
+
+Reserve a rectangular zone at the top right of the next `#tasks` call so its
+rows flow around overlay content placed there independently — a QR code, a
+stamp, a logo. Rows that would overlap the zone render in a narrowed column
+beside it; once enough rows have passed to clear the zone's height, the
+remaining rows return to full width. Only horizontal flow (the default)
+supports this — vertical flow ignores a pending zone, since narrowing rows
+would reorder the numbering.
+
+Set the zone with the `taskize-wrap-zone` state before the `#tasks` call and
+place the overlay content yourself (`tasks` only reserves the space, it does
+not draw anything there):
+
+#example(
+  [```typst
+  #taskize-wrap-zone.update((width: 2.4cm, height: 2.4cm))
+  #place(top + right, box(
+    width: 2.4cm, height: 2.4cm,
+    stroke: 0.5pt + luma(60%),
+  )[QR code])
+
+  #tasks(columns: 2)[
+    + $2 + 3$
+    + $5 - 1$
+    + $4 times 2$
+    + $9 div 3$
+    + $7 + 6$
+    + $12 - 4$
+  ]
+  ```],
+  [
+    #taskize-wrap-zone.update((width: 2.4cm, height: 2.4cm))
+    #place(top + right, box(
+      width: 2.4cm, height: 2.4cm,
+      stroke: 0.5pt + luma(60%),
+    )[#align(center + horizon)[#text(size: 8pt, fill: luma(60%))[QR code]]])
+    #tasks(columns: 2)[
+      + $2 + 3$
+      + $5 - 1$
+      + $4 times 2$
+      + $9 div 3$
+      + $7 + 6$
+      + $12 - 4$
+    ]
+  ]
+)
+
+The state is consumed automatically: the first `#tasks` call that flows
+around it resets it to `none`, so later calls in the same document are
+unaffected by a zone set earlier. Two ways to override the shared state on a
+single call:
+
+#table(
+  columns: (1.2fr, 1fr, 1fr, 2.3fr),
+  stroke: (x: none, y: 0.3pt + luma(85%)),
+  inset: 6pt,
+  [*Name*], [*Type*], [*Default*], [*Description*],
+  [`wrap-zone` (parameter of `tasks()`)], [auto/none/dictionary], [auto], [`auto` honors the shared `taskize-wrap-zone` state (the common case); `none` ignores a pending zone even if one is set; `(width: <length>, height: <length>)` reserves an explicit zone for this call only, without reading or clearing the shared state],
+  [`taskize-wrap-zone` (state)], [none/dictionary], [none], [Shared state read by `tasks()` when its own `wrap-zone` parameter is `auto`. Set it with `#taskize-wrap-zone.update((width:, height:))` before the call; it is reset to `none` once a `#tasks` call consumes it. This is the contract wrapper packages (e.g. exercise-bank) use to reserve space for content they overlay themselves],
+)
+
 // =============================================================================
 // CONFIGURATION
 // =============================================================================
@@ -637,6 +700,7 @@ The `tasks()` function supports the following parameters:
   [above], [length], [0.5em], [Space before the block],
   [below], [length], [0.5em], [Space after the block],
   [flow], [string], ["horizontal"], ["horizontal" or "vertical" flow],
+  [wrap-zone], [auto/none/dictionary], [auto], [`auto` honors the shared `taskize-wrap-zone` state; `none` ignores a pending zone; `(width:, height:)` sets an explicit zone for this call only. See #link(<wrap-zone>)[Wrap Zone]],
 )
 
 // =============================================================================

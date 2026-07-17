@@ -28,6 +28,14 @@
 // Global counter for resuming
 #let tasks-counter = counter("tasks-counter")
 
+// Rectangular zone (dict (width:, height:), absolute lengths) reserved at the
+// top right of the next #tasks call: its first rows render beside the zone at
+// reduced width, the remaining rows below at full width. Meant for wrapper
+// packages that overlay content there (e.g. exercise-bank's QR codes) — they
+// set this state before the tasks body and clear it after. The state key is
+// the cross-package contract: any package may set state("taskize-wrap-zone").
+#let taskize-wrap-zone = state("taskize-wrap-zone", none)
+
 // =============================================================================
 // Configuration Function
 // =============================================================================
@@ -721,6 +729,8 @@
   above: auto,
   below: auto,
   flow: auto,
+  wrap-zone: auto,          // auto = honor taskize-wrap-zone state; none = ignore it;
+                            // (width:, height:) = explicit top-right zone to flow around
   body,
 ) = context {
   let cfg = tasks-config.get()
@@ -898,7 +908,58 @@
     start
   }
 
-  if task-items.len() > 0 {
+  // Top-right zone to flow around (from the shared state unless overridden)
+  let zone = if wrap-zone == auto { taskize-wrap-zone.get() } else { wrap-zone }
+
+  let render-split = (items, cols, start2, above2, below2) => render-tasks-grid(
+    items, cols, fmt, col-gut, row-gut,
+    lbl-width, lbl-align, lbl-baseline, lbl-weight, indent-after,
+    blk-indent, above2, below2,
+    flow-dir, start2,
+    adaptive-rows: adaptive-rows,
+  )
+
+  if task-items.len() > 0 and zone != none and flow-dir == "horizontal" {
+    // Flow around the reserved top-right zone: render whole rows in a
+    // narrowed box until the zone height is cleared, then the remaining
+    // rows at full width. Vertical flow keeps the plain layout (splitting
+    // it would reorder the numbering).
+    let zone-w = zone.width.to-absolute()
+    let zone-h = zone.height.to-absolute()
+    layout(size => {
+      let narrow = calc.max(size.width - zone-w, size.width * 0.35)
+      let cols = if _is-auto-fit-columns(requested-cols) {
+        _select-auto-fit-columns(
+          task-items, max-cols, fmt, col-gut, lbl-width, lbl-weight,
+          indent-after, blk-indent, start-num, fit-mode, fit-tolerance, narrow,
+        )
+      } else {
+        requested-cols
+      }
+      let n = task-items.len()
+      let measure-first(k) = measure(
+        box(width: narrow, render-split(task-items.slice(0, k), cols, start-num, 0pt, 0pt)),
+      ).height
+      let k = calc.min(cols, n)
+      while k < n and measure-first(k) < zone-h {
+        k += cols
+      }
+      k = calc.min(k, n)
+      let first-height = measure-first(k)
+      block(width: 100%, above: above-spacing, below: below-spacing, {
+        box(width: narrow, render-split(task-items.slice(0, k), cols, start-num, 0pt, 0pt))
+        if k < n {
+          v(row-gut)
+          render-split(task-items.slice(k, n), cols, start-num + k, 0pt, 0pt)
+        } else if first-height < zone-h {
+          // All items fit beside the zone: pad so following content clears it
+          v(zone-h - first-height)
+        }
+      })
+    })
+    // Consumed: a later #tasks call must not flow around the same zone
+    taskize-wrap-zone.update(none)
+  } else if task-items.len() > 0 {
     if _is-auto-fit-columns(requested-cols) {
       assert(fit-mode in ("fill", "uniform"), message: "auto-fit-mode must be \"fill\" or \"uniform\"")
       layout(size => {

@@ -1,6 +1,6 @@
 # taskize
 
-[![taskize on Typst Universe](https://img.shields.io/badge/Typst_Universe-v._0.2.7-239dad?labelColor=eee)](https://typst.app/universe/package/taskize)
+[![taskize on Typst Universe](https://img.shields.io/badge/Typst_Universe-v._0.2.8-239dad?labelColor=eee)](https://typst.app/universe/package/taskize)
 [![Full package manual as PDF](https://img.shields.io/badge/Manual-pdf-333333?labelColor=eee)](https://github.com/nathan-ed/typst-package-taskize/blob/22fdb44f0383f32f91f323ba11571af591aebde2/docs/manual.pdf)
 [![Distributed under the MIT license](https://img.shields.io/badge/License-MIT-333333?labelColor=eee)](LICENSE)
 
@@ -16,8 +16,8 @@ Click on an image to see the source code.
 | Basic Tasks | Math Exercises | Custom Labels | Styled Layout |
 | [![Vertical flow direction filling columns top-to-bottom](gallery/vertical.svg)](gallery/vertical.typ) | [![Column spanning: items spanning two or all columns](gallery/span.svg)](gallery/span.typ) | [![Bold label weight for emphasis in task lists](gallery/bold.svg)](gallery/bold.typ) | [![Resume numbering continuing across multiple task blocks](gallery/resume.svg)](gallery/resume.typ) |
 | Vertical Flow | Column Spanning | Bold Labels | Resume Numbering |
-| [![Adaptive row heights: display fractions bleeding into the row gutter, then fixed](gallery/adaptive.svg)](gallery/adaptive.typ) | | | |
-| Adaptive Row Heights | | | |
+| [![Adaptive row heights: display fractions bleeding into the row gutter, then fixed](gallery/adaptive.svg)](gallery/adaptive.typ) | [![Wrap zone reserving a top-right corner for a QR code while task rows flow around it](gallery/wrap-zone.svg)](gallery/wrap-zone.typ) | | |
+| Adaptive Row Heights | Wrap Zone | | |
 
 ## Features
 
@@ -33,6 +33,7 @@ Click on an image to see the source code.
 - **Global configuration** - Set defaults for all tasks in your document
 - **Shorthand functions** - `tasks2`, `tasks3`, `tasks4` for quick column setup
 - **Spacing & alignment controls** - Fine-grained gutters, label alignment, baselines, and block spacing
+- **Wrap zone** - Reserve a top-right corner for overlay content (QR codes, stamps) and flow task rows around it
 
 ## Manual
 
@@ -41,7 +42,7 @@ A full manual is available as a [PDF](https://github.com/nathan-ed/typst-package
 ## Quick Start
 
 ```typst
-#import "@preview/taskize:0.2.7": tasks
+#import "@preview/taskize:0.2.8": tasks
 
 #tasks[
   + First item
@@ -56,7 +57,7 @@ A full manual is available as a [PDF](https://github.com/nathan-ed/typst-package
 ### Simple Two-Column Layout
 
 ```typst
-#import "@preview/taskize:0.2.7": tasks
+#import "@preview/taskize:0.2.8": tasks
 
 #tasks[
   + $2 + 3 = ?$
@@ -69,7 +70,7 @@ A full manual is available as a [PDF](https://github.com/nathan-ed/typst-package
 ### Three-Column Layout
 
 ```typst
-#import "@preview/taskize:0.2.7": tasks
+#import "@preview/taskize:0.2.8": tasks
 
 #tasks(columns: 3)[
   + Option A
@@ -86,7 +87,7 @@ A full manual is available as a [PDF](https://github.com/nathan-ed/typst-package
 Use `columns: "auto-fit"` to choose the largest column count that does not make any item wrap or overflow compared with a one-column layout. Limit the search with `max-columns`.
 
 ```typst
-#import "@preview/taskize:0.2.7": tasks
+#import "@preview/taskize:0.2.8": tasks
 
 #tasks(columns: "auto-fit", max-columns: 4)[
   + Medium length task with detail
@@ -108,7 +109,7 @@ one column, because no no-wrap multi-column layout exists.
 ### Shorthand Functions
 
 ```typst
-#import "@preview/taskize:0.2.7": tasks2, tasks3, tasks4
+#import "@preview/taskize:0.2.8": tasks2, tasks3, tasks4
 
 // Two columns
 #tasks2[
@@ -137,7 +138,7 @@ one column, because no no-wrap multi-column layout exists.
 ### Built-in Formats
 
 ```typst
-#import "@preview/taskize:0.2.7": tasks
+#import "@preview/taskize:0.2.8": tasks
 
 // Lowercase letters with parenthesis (default)
 #tasks(label: "a)")[+ One  + Two  + Three]
@@ -170,7 +171,7 @@ one column, because no no-wrap multi-column layout exists.
 ### Custom Label Function
 
 ```typst
-#import "@preview/taskize:0.2.7": tasks
+#import "@preview/taskize:0.2.8": tasks
 
 // Custom emoji labels
 #tasks(label: n => "Q" + str(n) + ":")[
@@ -187,7 +188,7 @@ one column, because no no-wrap multi-column layout exists.
 Items fill rows first: `a b | c d | e f`
 
 ```typst
-#import "@preview/taskize:0.2.7": tasks
+#import "@preview/taskize:0.2.8": tasks
 
 #tasks(columns: 2, flow: "horizontal")[
   + a
@@ -208,7 +209,7 @@ Items fill rows first: `a b | c d | e f`
 Items fill columns first: `a c e | b d f`
 
 ```typst
-#import "@preview/taskize:0.2.7": tasks
+#import "@preview/taskize:0.2.8": tasks
 
 #tasks(columns: 2, flow: "vertical")[
   + a
@@ -227,7 +228,7 @@ Items fill columns first: `a c e | b d f`
 ## Resuming Numbering
 
 ```typst
-#import "@preview/taskize:0.2.7": tasks, tasks-reset
+#import "@preview/taskize:0.2.8": tasks, tasks-reset
 
 #tasks[
   + First
@@ -256,7 +257,7 @@ Some text between task blocks...
 ## Starting from a Specific Number
 
 ```typst
-#import "@preview/taskize:0.2.7": tasks
+#import "@preview/taskize:0.2.8": tasks
 
 #tasks(start: 5)[
   + This is item 5
@@ -270,7 +271,7 @@ Some text between task blocks...
 Set defaults for all tasks in your document:
 
 ```typst
-#import "@preview/taskize:0.2.7": tasks, tasks-setup
+#import "@preview/taskize:0.2.8": tasks, tasks-setup
 
 // Configure global defaults
 #tasks-setup(
@@ -301,7 +302,7 @@ Set defaults for all tasks in your document:
 Control the vertical alignment of labels relative to content:
 
 ```typst
-#import "@preview/taskize:0.2.7": tasks
+#import "@preview/taskize:0.2.8": tasks
 
 // Center alignment (default)
 #tasks(label-baseline: "center")[
@@ -328,7 +329,7 @@ Control the vertical alignment of labels relative to content:
 Make labels stand out by using bold weight:
 
 ```typst
-#import "@preview/taskize:0.2.7": tasks
+#import "@preview/taskize:0.2.8": tasks
 
 // Bold labels for emphasis
 #tasks(label-weight: "bold")[
@@ -349,7 +350,7 @@ Make labels stand out by using bold weight:
 Items can span multiple columns using the `+()` or `+(N)` syntax (no space after `+`). This is similar to LaTeX's `\task*` command:
 
 ```typst
-#import "@preview/taskize:0.2.7": tasks
+#import "@preview/taskize:0.2.8": tasks
 
 #tasks(columns: 3)[
   + Short
@@ -434,7 +435,7 @@ Items can span multiple columns using the `+()` or `+(N)` syntax (no space after
 ### Math Exercise Sheet
 
 ```typst
-#import "@preview/taskize:0.2.7": tasks
+#import "@preview/taskize:0.2.8": tasks
 
 = Algebra Practice
 
@@ -460,7 +461,7 @@ Solve for $x$:
 ### Multiple Choice Questions
 
 ```typst
-#import "@preview/taskize:0.2.7": tasks
+#import "@preview/taskize:0.2.8": tasks
 
 *Question 1:* What is the capital of France?
 
@@ -484,7 +485,7 @@ Solve for $x$:
 ### Vocabulary List
 
 ```typst
-#import "@preview/taskize:0.2.7": tasks
+#import "@preview/taskize:0.2.8": tasks
 
 = French Vocabulary
 
@@ -528,12 +529,17 @@ MIT License - see LICENSE file for details.
 
 All notable changes to taskize are documented here.
 
+### [0.2.8] - 2026-07-17
+
+#### Added
+- **Wrap zone** - Reserve a rectangular zone at the top right of a `#tasks` call with the `wrap-zone` parameter (or the shared `taskize-wrap-zone` state) so task rows flow around overlay content placed there independently — a QR code, a stamp, a logo. Rows overlapping the zone render narrowed beside it; later rows return to full width once the zone's height is cleared. The shared state is the cross-package contract wrapper packages (e.g. exercise-bank) use to reserve space for content they draw themselves.
+- **Adaptive row heights** - `row-gutter: "auto"` (or `"adaptive"`) sizes rows to the true ink of their content, so tall inline math (display fractions, matrices) no longer bleeds into the row-gutter and the configured numeric gutter becomes the real visual gap. Rows with ordinary content keep exactly the same spacing as before. Can be set document-wide with `tasks-setup(row-gutter: "adaptive")`.
+
 ### [0.2.7] - 2026-07-13
 
 #### Added
 - **Auto-fit columns** - `columns: "auto-fit"` selects the largest column count, bounded by `max-columns` (default: up to the number of items), that does not introduce a new item wrap or fixed-size content overflow. Useful for exercises mixing short choices, longer text, math, spans, and small figures.
 - **Auto-spanning in fill mode** - with `auto-fit-mode: "fill"` (default), a regular `+` item too wide for one column automatically spans the minimum number of columns it needs — no explicit `+(N)` required — so wide items share rows with densely packed short items. `auto-fit-mode: "uniform"` instead requires every item to fit one ordinary column and falls back to fewer columns when the widest item no longer fits.
-- **Adaptive row heights** - `row-gutter: "auto"` (or `"adaptive"`) sizes rows to the true ink of their content, so tall inline math (display fractions, matrices) no longer bleeds into the row-gutter and the configured numeric gutter becomes the real visual gap. Rows with ordinary content keep exactly the same spacing as before. Can be set document-wide with `tasks-setup(row-gutter: "adaptive")`.
 
 ### [0.2.6] - 2026-07-02
 
