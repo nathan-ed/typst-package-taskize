@@ -392,8 +392,10 @@ Items can span multiple columns using the `+()` or `+(N)` syntax (no space after
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `columns` | int/string | 2 | Number of columns, or `"auto-fit"` to choose the largest no-wrap count |
-| `label` | string/function | `"a)"` | Label format (shorthand for `label-format`) |
+| `label` | string/function | `"a)"` | Label format (shorthand for `label-format`). `"enum"` follows the document's `enum` numbering, one level per nesting depth |
 | `label-format` | string/function | `"a)"` | Label format |
+| `answer-lines` | int | 0 | Dotted lines drawn under each task, for exam sheets |
+| `answer-line-gap` | length | 1.2em | Spacing between those lines |
 | `start` | int | 1 | Starting number for labels |
 | `resume` | bool | false | Continue numbering from previous block |
 | `column-gutter` | length | 1em | Space between columns |
@@ -531,13 +533,20 @@ All notable changes to taskize are documented here.
 
 ### [0.2.9] - 2026-08-19
 
+#### Added
+- **`label: "enum"`** ([#3](https://github.com/nathan-ed/typst-package-taskize/issues/3)) — follow the document's own `enum` numbering instead of repeating the format on every call. A multi-level pattern is honoured by nesting depth: with `#set enum(numbering: "1) a)")`, a top-level task list numbers `1)` `2)` and a nested one `a)` `b)`. The default is unchanged.
+- **`answer-lines`** ([#1](https://github.com/nathan-ed/typst-package-taskize/issues/1)) — dotted lines under each task for exam sheets, filling the column they land in: `#tasks(columns: 2, answer-lines: 2)[...]`. `answer-line-gap` sets their spacing, and `answer-dots(count: 3)` draws them anywhere on its own. Settable document-wide with `tasks-setup`.
+- **Items as an array** — `#tasks(([One], [Two], [Three]))` spells a list out where the one-line `+` syntax cannot; an entry may carry its span as `([wide], 2)`.
+
 #### Fixed
+- **A bare `+` inside an item was taken for a new item** ([#2](https://github.com/nathan-ed/typst-package-taskize/issues/2)) — `+ What is 2 + 2?` was split in two and the rest of the line repeated after it. Typst only starts an item at the head of a line, so a `+` anywhere else is plain text and is now treated as such. A list written on one line has no item syntax to rely on, so pass the items as an array instead: `#tasks(([One], [Two], [Three]))`, which also takes `([wide item], 2)` to span columns.
 - **The label of an item that opens inline and continues with a block sat at the top of the cell instead of on the item's first baseline.** An item written as a line of text followed by a nested `tasks` call, a figure or a table is not inline as a whole, so it fell back to the top-aligned rendering: with a display fraction on that first line, the number ended up level with the numerator rather than with the text it labels. This is the ordinary shape of a multiple-choice question, and it shows on every item when fractions are set in display style. The item is now indented by the label column and the label pulled back into the margin that frees, so it rides on the first line and shares its baseline. The content itself is passed through untouched, so a nested `tasks` keeps its own `above` spacing exactly. Items that *begin* with a block keep the previous two-cell rendering, there being no text line to align on. Reported, with this approach, by the MathALÉA team.
 
 ### [0.2.8] - 2026-07-17
 
 #### Added
-- **Wrap zone** - Reserve a rectangular zone at the top right of a `#tasks` call with the `wrap-zone` parameter (or the shared `taskize-wrap-zone` state) so task rows flow around overlay content placed there independently — a QR code, a stamp, a logo. Rows overlapping the zone render narrowed beside it; later rows return to full width once the zone's height is cleared. The shared state is the cross-package contract wrapper packages (e.g. exercise-bank) use to reserve space for content they draw themselves.
+
+#### Fixed - Reserve a rectangular zone at the top right of a `#tasks` call with the `wrap-zone` parameter (or the shared `taskize-wrap-zone` state) so task rows flow around overlay content placed there independently — a QR code, a stamp, a logo. Rows overlapping the zone render narrowed beside it; later rows return to full width once the zone's height is cleared. The shared state is the cross-package contract wrapper packages (e.g. exercise-bank) use to reserve space for content they draw themselves.
 - **Adaptive row heights** - `row-gutter: "auto"` (or `"adaptive"`) sizes rows to the true ink of their content, so tall inline math (display fractions, matrices) no longer bleeds into the row-gutter and the configured numeric gutter becomes the real visual gap. Rows with ordinary content keep exactly the same spacing as before. Can be set document-wide with `tasks-setup(row-gutter: "adaptive")`.
 
 ### [0.2.7] - 2026-07-13

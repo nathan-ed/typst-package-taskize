@@ -400,8 +400,8 @@ column slot. The same difference applies with 2 or 3 columns.
 
 #example(
   [```typst
-  #tasks(label: "A)")[+ Alpha + Beta + Gamma]
-  #tasks(label: "(1)")[+ One + Two + Three]
+  #tasks(label: "A)", ([Alpha], [Beta], [Gamma]))
+  #tasks(label: "(1)", ([One], [Two], [Three]))
   #tasks(label: n => "Q" + str(n) + ":")[
     + What is 2 + 2?
     + What is the capital of France?
@@ -409,9 +409,9 @@ column slot. The same difference applies with 2 or 3 columns.
   ]
   ```],
   [
-    #tasks(label: "A)")[+ Alpha + Beta + Gamma]
+    #tasks(label: "A)", ([Alpha], [Beta], [Gamma]))
     #v(0.4em)
-    #tasks(label: "(1)")[+ One + Two + Three]
+    #tasks(label: "(1)", ([One], [Two], [Three]))
     #v(0.4em)
     #tasks(label: n => "Q" + str(n) + ":")[
       + What is 2 + 2?

@@ -9,6 +9,8 @@
 #let tasks-config = state("tasks-config", (
   columns: 2,
   label-format: "a)",           // "a)", "1)", "i)", "(a)", "(1)", custom function
+  answer-lines: 0,              // dotted lines drawn under each task, for exam sheets
+  answer-line-gap: 1.2em,       // spacing between those lines
   column-gutter: 1em,
   row-gutter: 0.6em,
   max-columns: auto,           // auto = up to number of items for auto-fit
@@ -36,6 +38,11 @@
 // the cross-package contract: any package may set state("taskize-wrap-zone").
 #let taskize-wrap-zone = state("taskize-wrap-zone", none)
 
+// How deep the current tasks call is nested inside other tasks calls, so that
+// label: "enum" can pick the matching level of a multi-level enum numbering
+// pattern ("1) a)" gives "1)" at the top level and "a)" one level in).
+#let _taskize-depth = state("taskize-depth", 0)
+
 // =============================================================================
 // Configuration Function
 // =============================================================================
@@ -43,6 +50,8 @@
 #let tasks-setup(
   columns: none,
   label-format: none,
+  answer-lines: none,
+  answer-line-gap: none,
   column-gutter: none,
   row-gutter: none,
   max-columns: none,
@@ -62,6 +71,8 @@
     let new = cfg
     if columns != none { new.columns = columns }
     if label-format != none { new.label-format = label-format }
+    if answer-lines != none { new.answer-lines = answer-lines }
+    if answer-line-gap != none { new.answer-line-gap = answer-line-gap }
     if column-gutter != none { new.column-gutter = column-gutter }
     if row-gutter != none { new.row-gutter = row-gutter }
     if max-columns != none { new.max-columns = max-columns }
@@ -161,6 +172,20 @@
 // =============================================================================
 
 // Convert number to label based on format
+/// Dotted lines to write an answer on, filling the width they are given.
+///
+/// Inside a task they span the column, which is what an exam sheet wants:
+///   #tasks(columns: 2, answer-lines: 2)[...]
+/// or by hand, anywhere:
+///   #answer-dots(3)
+#let answer-dots(count: 1, gap: 1.2em) = {
+  if count <= 0 { return none }
+  stack(
+    spacing: gap,
+    ..range(count).map(_ => box(width: 1fr, repeat[.])),
+  )
+}
+
 #let format-label(n, format) = {
   if type(format) == function {
     format(n)
@@ -764,6 +789,8 @@
   columns: auto,
   label: auto,              // Shorthand for label-format
   label-format: auto,
+  answer-lines: auto,       // dotted lines under each task (exam sheets)
+  answer-line-gap: auto,
   start: 1,
   resume: false,
   column-gutter: auto,
@@ -789,6 +816,25 @@
   // Apply parameters (use provided value or fall back to config)
   let requested-cols = if columns == auto { cfg.columns } else { columns }
   let fmt = if label != auto { label } else if label-format != auto { label-format } else { cfg.label-format }
+  // label: "enum" follows the document's own enum numbering, so a task list
+  // matches the surrounding lists without repeating their format here.
+  // A multi-level pattern is split on spaces ("1) a)" -> "1)", "a)") and the
+  // level matching the nesting depth is used; deeper than the pattern goes,
+  // the last level repeats. A numbering *function* is called with the item
+  // number, since its levels cannot be taken apart.
+  let nesting = _taskize-depth.get()
+  if fmt == "enum" {
+    let pattern = enum.numbering
+    fmt = if type(pattern) == function {
+      n => pattern(n)
+    } else if type(pattern) == str {
+      let levels = pattern.split(" ").filter(p => p != "")
+      let level = if levels.len() == 0 { "1." } else { levels.at(calc.min(nesting, levels.len() - 1)) }
+      n => numbering(level, n)
+    } else {
+      "a)"
+    }
+  }
   let col-gut = if column-gutter == auto { cfg.column-gutter } else { column-gutter }
   let row-gut = if row-gutter == auto { cfg.row-gutter } else { row-gutter }
   // "auto"/"adaptive" row-gutter: rows are sized to their true ink (tall
@@ -927,9 +973,15 @@
         let (span, content-parsed) = parse-span(node.body, span-parse-cols)
         items.push((content-parsed, span))
       }
-    } else if node.func() == text and node.text.starts-with("+") {
-      // Handle +(N) and +() syntax which gets parsed as text (not enum.item)
-      // This happens when there's no space after +
+    } else if node.func() == text and node.text.starts-with("+(") {
+      // Handle +(N) and +() syntax, which is parsed as text rather than as an
+      // enum.item because there is no space after the +.
+      //
+      // Only "+(" opens an item here. A bare + in the middle of a line is
+      // ordinary text to Typst, which makes no item of it: taking it for an
+      // item split "What is 2 + 2?" in two and repeated the rest of the line
+      // (issue #2). A list written on one line has no item syntax to rely on;
+      // pass an array instead, see below.
       let text-content = node.text.slice(1) // Remove the +
       let (span, content) = parse-span(text-content, span-parse-cols)
       items.push((content, span))
@@ -950,7 +1002,34 @@
   }
 
   // Extract and flatten all items
-  task-items = flatten-all-enum-items(body)
+  let ans-lines = if answer-lines == auto { cfg.at("answer-lines", default: 0) } else { answer-lines }
+  let ans-gap = if answer-line-gap == auto { cfg.at("answer-line-gap", default: 1.2em) } else { answer-line-gap }
+
+  // An array spells the items out one by one. Typst has no inline list syntax:
+  // "+ One + Two" on a single line is one item to it, the pluses being plain
+  // text, so a short list written on one line needs an explicit form (issue #2).
+  //   #tasks(("One", "Two", "Three"))
+  // An entry may carry its column span as (content, span).
+  task-items = if type(body) == array {
+    body.map(entry => {
+      if type(entry) == array and entry.len() == 2 and type(entry.at(1)) == int {
+        (entry.at(0), entry.at(1))
+      } else {
+        (entry, 1)
+      }
+    })
+  } else {
+    flatten-all-enum-items(body)
+  }
+
+  // Room to write the answer, under each task (issue #1). The lines fill the
+  // column they land in, so they follow the layout rather than a fixed width.
+  if ans-lines > 0 {
+    task-items = task-items.map(item-data => (
+      item-data.at(0) + answer-dots(count: ans-lines, gap: ans-gap),
+      item-data.at(1),
+    ))
+  }
 
   // Determine starting number
   let start-num = if resume {
@@ -969,6 +1048,10 @@
     flow-dir, start2,
     adaptive-rows: adaptive-rows,
   )
+
+  // Everything emitted from here on is one level deeper, so a nested tasks
+  // call reading label: "enum" picks the next level of the pattern.
+  _taskize-depth.update(n => n + 1)
 
   if task-items.len() > 0 and zone != none and flow-dir == "horizontal" {
     // Flow around the reserved top-right zone: render whole rows in a
@@ -1059,6 +1142,8 @@
       )
     }
   }
+
+  _taskize-depth.update(n => n - 1)
 }
 
 // =============================================================================
