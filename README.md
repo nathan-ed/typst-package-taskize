@@ -1,6 +1,6 @@
 # taskize
 
-[![taskize on Typst Universe](https://img.shields.io/badge/Typst_Universe-v._0.2.8-239dad?labelColor=eee)](https://typst.app/universe/package/taskize)
+[![taskize on Typst Universe](https://img.shields.io/badge/Typst_Universe-v._0.2.9-239dad?labelColor=eee)](https://typst.app/universe/package/taskize)
 [![Full package manual as PDF](https://img.shields.io/badge/Manual-pdf-333333?labelColor=eee)](https://github.com/nathan-ed/typst-package-taskize/blob/cb28f846af4b83863be59166129b8a754e70d2fb/docs/manual.pdf)
 [![Distributed under the MIT license](https://img.shields.io/badge/License-MIT-333333?labelColor=eee)](LICENSE)
 
@@ -42,7 +42,7 @@ A full manual is available as a [PDF](https://github.com/nathan-ed/typst-package
 ## Quick Start
 
 ```typst
-#import "@preview/taskize:0.2.8": tasks
+#import "@preview/taskize:0.2.9": tasks
 
 #tasks[
   + First item
@@ -57,7 +57,7 @@ A full manual is available as a [PDF](https://github.com/nathan-ed/typst-package
 ### Simple Two-Column Layout
 
 ```typst
-#import "@preview/taskize:0.2.8": tasks
+#import "@preview/taskize:0.2.9": tasks
 
 #tasks[
   + $2 + 3 = ?$
@@ -70,7 +70,7 @@ A full manual is available as a [PDF](https://github.com/nathan-ed/typst-package
 ### Three-Column Layout
 
 ```typst
-#import "@preview/taskize:0.2.8": tasks
+#import "@preview/taskize:0.2.9": tasks
 
 #tasks(columns: 3)[
   + Option A
@@ -87,7 +87,7 @@ A full manual is available as a [PDF](https://github.com/nathan-ed/typst-package
 Use `columns: "auto-fit"` to choose the largest column count that does not make any item wrap or overflow compared with a one-column layout. Limit the search with `max-columns`.
 
 ```typst
-#import "@preview/taskize:0.2.8": tasks
+#import "@preview/taskize:0.2.9": tasks
 
 #tasks(columns: "auto-fit", max-columns: 4)[
   + Medium length task with detail
@@ -109,7 +109,7 @@ one column, because no no-wrap multi-column layout exists.
 ### Shorthand Functions
 
 ```typst
-#import "@preview/taskize:0.2.8": tasks2, tasks3, tasks4
+#import "@preview/taskize:0.2.9": tasks2, tasks3, tasks4
 
 // Two columns
 #tasks2[
@@ -138,7 +138,7 @@ one column, because no no-wrap multi-column layout exists.
 ### Built-in Formats
 
 ```typst
-#import "@preview/taskize:0.2.8": tasks
+#import "@preview/taskize:0.2.9": tasks
 
 // Lowercase letters with parenthesis (default)
 #tasks(label: "a)")[+ One  + Two  + Three]
@@ -171,7 +171,7 @@ one column, because no no-wrap multi-column layout exists.
 ### Custom Label Function
 
 ```typst
-#import "@preview/taskize:0.2.8": tasks
+#import "@preview/taskize:0.2.9": tasks
 
 // Custom emoji labels
 #tasks(label: n => "Q" + str(n) + ":")[
@@ -188,7 +188,7 @@ one column, because no no-wrap multi-column layout exists.
 Items fill rows first: `a b | c d | e f`
 
 ```typst
-#import "@preview/taskize:0.2.8": tasks
+#import "@preview/taskize:0.2.9": tasks
 
 #tasks(columns: 2, flow: "horizontal")[
   + a
@@ -209,7 +209,7 @@ Items fill rows first: `a b | c d | e f`
 Items fill columns first: `a c e | b d f`
 
 ```typst
-#import "@preview/taskize:0.2.8": tasks
+#import "@preview/taskize:0.2.9": tasks
 
 #tasks(columns: 2, flow: "vertical")[
   + a
@@ -228,7 +228,7 @@ Items fill columns first: `a c e | b d f`
 ## Resuming Numbering
 
 ```typst
-#import "@preview/taskize:0.2.8": tasks, tasks-reset
+#import "@preview/taskize:0.2.9": tasks, tasks-reset
 
 #tasks[
   + First
@@ -257,7 +257,7 @@ Some text between task blocks...
 ## Starting from a Specific Number
 
 ```typst
-#import "@preview/taskize:0.2.8": tasks
+#import "@preview/taskize:0.2.9": tasks
 
 #tasks(start: 5)[
   + This is item 5
@@ -271,7 +271,7 @@ Some text between task blocks...
 Set defaults for all tasks in your document:
 
 ```typst
-#import "@preview/taskize:0.2.8": tasks, tasks-setup
+#import "@preview/taskize:0.2.9": tasks, tasks-setup
 
 // Configure global defaults
 #tasks-setup(
@@ -302,7 +302,7 @@ Set defaults for all tasks in your document:
 Control the vertical alignment of labels relative to content:
 
 ```typst
-#import "@preview/taskize:0.2.8": tasks
+#import "@preview/taskize:0.2.9": tasks
 
 // Center alignment (default)
 #tasks(label-baseline: "center")[
@@ -329,7 +329,7 @@ Control the vertical alignment of labels relative to content:
 Make labels stand out by using bold weight:
 
 ```typst
-#import "@preview/taskize:0.2.8": tasks
+#import "@preview/taskize:0.2.9": tasks
 
 // Bold labels for emphasis
 #tasks(label-weight: "bold")[
@@ -350,7 +350,7 @@ Make labels stand out by using bold weight:
 Items can span multiple columns using the `+()` or `+(N)` syntax (no space after `+`). This is similar to LaTeX's `\task*` command:
 
 ```typst
-#import "@preview/taskize:0.2.8": tasks
+#import "@preview/taskize:0.2.9": tasks
 
 #tasks(columns: 3)[
   + Short
@@ -435,7 +435,7 @@ Items can span multiple columns using the `+()` or `+(N)` syntax (no space after
 ### Math Exercise Sheet
 
 ```typst
-#import "@preview/taskize:0.2.8": tasks
+#import "@preview/taskize:0.2.9": tasks
 
 = Algebra Practice
 
@@ -461,7 +461,7 @@ Solve for $x$:
 ### Multiple Choice Questions
 
 ```typst
-#import "@preview/taskize:0.2.8": tasks
+#import "@preview/taskize:0.2.9": tasks
 
 *Question 1:* What is the capital of France?
 
@@ -485,7 +485,7 @@ Solve for $x$:
 ### Vocabulary List
 
 ```typst
-#import "@preview/taskize:0.2.8": tasks
+#import "@preview/taskize:0.2.9": tasks
 
 = French Vocabulary
 
@@ -528,6 +528,11 @@ MIT License - see LICENSE file for details.
 ## Changelog
 
 All notable changes to taskize are documented here.
+
+### [0.2.9] - 2026-08-19
+
+#### Fixed
+- **The label of an item that opens inline and continues with a block sat at the top of the cell instead of on the item's first baseline.** An item written as a formula, a line break and a figure (the shape MathALÉA sheets use) is not inline as a whole, so it fell back to the top-aligned rendering: with a display fraction on that first line, the number ended up level with the numerator rather than with the formula it labels. Such an item is now split at the end of its first line, the label shares that line's baseline as it does for fully inline items, and the block follows underneath, indented to the content column. Items that are a single block keep the label beside them as before.
 
 ### [0.2.8] - 2026-07-17
 

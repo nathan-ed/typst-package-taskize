@@ -261,6 +261,59 @@
   return false
 }
 
+// Split a task's content at the end of its first line: the leading run of
+// inline nodes, and everything after it. An item that opens with a formula and
+// then carries a figure or a block is inline for exactly one line, and that
+// line is the one the label has to sit on.
+//
+// Returns (head, tail) as content, head being none when the item does not open
+// with inline material (the caller then keeps the top-aligned rendering).
+#let split-leading-inline(node) = {
+  if type(node) != content or repr(node.func()) != "sequence" {
+    return (none, node)
+  }
+  let head = ()
+  let tail = ()
+  let in-head = true
+  for child in node.children {
+    if not in-head {
+      tail.push(child)
+      continue
+    }
+    // A line break closes the first line; the label belongs to what precedes it
+    if repr(child.func()) == "linebreak" {
+      in-head = false
+      continue
+    }
+    if is-inline-content(child) {
+      head.push(child)
+    } else {
+      in-head = false
+      tail.push(child)
+    }
+  }
+  // A head made only of spacing is not a first line: an item whose content is
+  // a single block usually starts with the whitespace of the source, and often
+  // with an empty text node, and that block belongs next to the label rather
+  // than under it.
+  let is-blank(c) = {
+    let f = repr(c.func())
+    if f in ("space", "h") { return true }
+    if f == "text" { return c.text.trim() == "" }
+    false
+  }
+  let head-has-ink = head.any(c => not is-blank(c))
+  if head.len() == 0 or tail.len() == 0 or not head-has-ink {
+    return (none, node)
+  }
+  // Drop the whitespace that trails a line break, it would open the tail with
+  // a stray space
+  while tail.len() > 0 and repr(tail.first().func()) == "space" {
+    tail = tail.slice(1)
+  }
+  (head.join(), tail.join())
+}
+
 // =============================================================================
 // Internal: Render tasks grid
 // =============================================================================
@@ -463,11 +516,43 @@
     )))
   }
 
+  // Same, for an item whose first line is inline but which continues with block
+  // content (a figure, an image, a nested block). The label shares the baseline
+  // of that first line, and the rest follows underneath, indented to the
+  // content column as it would be in the two-cell rendering.
+  let make-split-cell(label, head, tail, span) = {
+    let lbl = text(weight: lbl-weight)[#label]
+    let halign = if type(lbl-align) == alignment and lbl-align.x != none {
+      lbl-align.x
+    } else {
+      right
+    }
+    let label-box = box(width: actual-label-width, {
+      if halign == left { lbl; h(1fr) }
+      else if halign == center { h(1fr); lbl; h(1fr) }
+      else { h(1fr); lbl }
+    })
+    grid.cell(colspan: span * 2, align(left + top, {
+      par(
+        hanging-indent: actual-label-width + indent-after,
+        [#label-box#h(indent-after)#wrap-content(head)],
+      )
+      pad(left: actual-label-width + indent-after, wrap-content(tail))
+    }))
+  }
+
   // Build the cell(s) for one item: a single baseline-aligned cell when
   // possible, otherwise the classic label cell + top-aligned content cell.
   let make-item-cells(label, content, span) = {
+    let (head, tail) = if use-inline-baseline {
+      split-leading-inline(content)
+    } else {
+      (none, content)
+    }
     if use-inline-baseline and is-inline-content(content) {
       (make-inline-cell(label, content, span),)
+    } else if head != none {
+      (make-split-cell(label, head, tail, span),)
     } else if span == 1 {
       (make-label-cell(label), make-content-cell(content))
     } else {

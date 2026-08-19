@@ -1,4 +1,4 @@
-#import "@preview/taskize:0.2.8": tasks, tasks2, tasks3, tasks4, tasks-reset, tasks-setup, taskize-wrap-zone
+#import "@preview/taskize:0.2.9": tasks, tasks2, tasks3, tasks4, tasks-reset, tasks-setup, taskize-wrap-zone
 
 // =============================================================================
 // DOCUMENT SETUP
@@ -106,7 +106,7 @@
 Import the package in your Typst document:
 
 ```typst
-#import "@preview/taskize:0.2.8": tasks
+#import "@preview/taskize:0.2.9": tasks
 ```
 
 == Quick Start
