@@ -1,35 +1,29 @@
 // An item whose first line is inline but which continues with a block (a
-// figure, an image, a nested tasks call). The label must sit on the baseline
-// of that first line, exactly as it does when the block is not there.
+// nested tasks call, a figure, a table). The label must sit on the baseline of
+// that first line, exactly as it does when the block is not there.
 //
-// The block is a scaled figure inside layout(), the shape MathALEA sheets use,
-// and the grid has two columns: that is the case where the label used to be
-// pushed to the top of the cell instead.
+// This is the shape of a multiple-choice question: one line of text, then the
+// block of answers. With a display fraction on that first line the line's
+// ascent grows, the text baseline moves down, and the label used to stay at
+// the top of the row.
 //
-// Page 1: items with the trailing figure. Page 2: the same items without it,
-// the reference. The check compares the label position between the two.
+// Page 1: the item with its block. Page 2: the same item without it, the
+// reference. The check compares the label position between the two.
 #import "/lib.typ": tasks
 
-#set page(width: 18cm, height: 6cm, margin: 1cm)
+#set page(width: 13cm, height: 7cm, margin: 1cm)
 #set text(size: 11pt)
-#set par(leading: 0.6em)
 #show math.frac: it => math.display(it)
 
-#let fig = rect(width: 4cm, height: 5mm, fill: orange.lighten(60%))
-#let figblock(body) = layout(size => {
-  let natural = measure(body).width
-  let f = calc.min(1.0, size.width / natural)
-  box(scale(f * 100%, origin: top + left, reflow: true, body))
-})
+#tasks(columns: 1, label: "1.", row-gutter: 1.2em)[
+  + The solution of $4/x = -3$ is:
 
-#tasks(columns: 2, label: (..n) => strong(numbering("1.", ..n)), start: 1)[
-  + $2 dot.op frac(4, 5)$\
-    #figblock(fig)
-  + $4 dot.op frac(2, 3)$\
-    #figblock(fig)
+    #tasks(columns: 2, label: "A)", above: 0.4em, below: 0.4em)[
+      + $-4/3$
+      + $4/3$
+    ]
 ]
 #pagebreak()
-#tasks(columns: 2, label: (..n) => strong(numbering("1.", ..n)), start: 1)[
-  + $2 dot.op frac(4, 5)$
-  + $4 dot.op frac(2, 3)$
+#tasks(columns: 1, label: "1.", row-gutter: 1.2em)[
+  + The solution of $4/x = -3$ is:
 ]

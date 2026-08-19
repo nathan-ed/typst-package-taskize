@@ -261,57 +261,25 @@
   return false
 }
 
-// Split a task's content at the end of its first line: the leading run of
-// inline nodes, and everything after it. An item that opens with a formula and
-// then carries a figure or a block is inline for exactly one line, and that
-// line is the one the label has to sit on.
-//
-// Returns (head, tail) as content, head being none when the item does not open
-// with inline material (the caller then keeps the top-aligned rendering).
-#let split-leading-inline(node) = {
-  if type(node) != content or repr(node.func()) != "sequence" {
-    return (none, node)
-  }
-  let head = ()
-  let tail = ()
-  let in-head = true
-  for child in node.children {
-    if not in-head {
-      tail.push(child)
-      continue
-    }
-    // A line break closes the first line; the label belongs to what precedes it
-    if repr(child.func()) == "linebreak" {
-      in-head = false
-      continue
-    }
-    if is-inline-content(child) {
-      head.push(child)
-    } else {
-      in-head = false
-      tail.push(child)
-    }
-  }
-  // A head made only of spacing is not a first line: an item whose content is
-  // a single block usually starts with the whitespace of the source, and often
-  // with an empty text node, and that block belongs next to the label rather
-  // than under it.
-  let is-blank(c) = {
+// Returns true if the content is not inline as a whole, but *begins* with
+// inline content: a text line followed by a block (a nested tasks call, a
+// figure, a table). The label can then still share that first line.
+#let starts-inline(node) = {
+  if is-inline-content(node) { return true }
+  if type(node) != content { return false }
+  if repr(node.func()) == "styled" { return starts-inline(node.child) }
+  if not node.has("children") { return false }
+  // Leading whitespace, or the empty text node the parser leaves in front of a
+  // block, is not a first line on its own
+  let blank(c) = {
     let f = repr(c.func())
-    if f in ("space", "h") { return true }
-    if f == "text" { return c.text.trim() == "" }
-    false
+    if f in ("space", "h") { true } else if f == "text" { c.text.trim() == "" } else { false }
   }
-  let head-has-ink = head.any(c => not is-blank(c))
-  if head.len() == 0 or tail.len() == 0 or not head-has-ink {
-    return (none, node)
+  for child in node.children {
+    if blank(child) { continue }
+    return is-inline-content(child)
   }
-  // Drop the whitespace that trails a line break, it would open the tail with
-  // a stray space
-  while tail.len() > 0 and repr(tail.first().func()) == "space" {
-    tail = tail.slice(1)
-  }
-  (head.join(), tail.join())
+  false
 }
 
 // =============================================================================
@@ -516,11 +484,14 @@
     )))
   }
 
-  // Same, for an item whose first line is inline but which continues with block
-  // content (a figure, an image, a nested block). The label shares the baseline
-  // of that first line, and the rest follows underneath, indented to the
-  // content column as it would be in the two-cell rendering.
-  let make-split-cell(label, head, tail, span) = {
+  // Same, for an item whose first line is inline but which continues with a
+  // block (a nested tasks call, a figure, a table). The item is indented by
+  // the label column and the label is pulled back into the margin that frees,
+  // so it sits on the first line and shares its baseline. The content is
+  // passed through untouched, so its own inner spacing — a nested #tasks and
+  // its `above`, a figure's block spacing — is preserved exactly. Splitting it
+  // into head and tail instead would drop the weak spacing at the seam.
+  let make-hanging-cell(label, content, span) = {
     let lbl = text(weight: lbl-weight)[#label]
     let halign = if type(lbl-align) == alignment and lbl-align.x != none {
       lbl-align.x
@@ -532,27 +503,22 @@
       else if halign == center { h(1fr); lbl; h(1fr) }
       else { h(1fr); lbl }
     })
-    grid.cell(colspan: span * 2, align(left + top, {
-      par(
-        hanging-indent: actual-label-width + indent-after,
-        [#label-box#h(indent-after)#wrap-content(head)],
-      )
-      pad(left: actual-label-width + indent-after, wrap-content(tail))
-    }))
+    let indent = actual-label-width + indent-after
+    grid.cell(colspan: span * 2, align(left + top, pad(left: indent, {
+      // zero width: the label rides on the content's first line, so it shares
+      // that line's baseline whatever the line's height
+      box(width: 0pt, move(dx: -indent, label-box))
+      wrap-content(content)
+    })))
   }
 
   // Build the cell(s) for one item: a single baseline-aligned cell when
   // possible, otherwise the classic label cell + top-aligned content cell.
   let make-item-cells(label, content, span) = {
-    let (head, tail) = if use-inline-baseline {
-      split-leading-inline(content)
-    } else {
-      (none, content)
-    }
     if use-inline-baseline and is-inline-content(content) {
       (make-inline-cell(label, content, span),)
-    } else if head != none {
-      (make-split-cell(label, head, tail, span),)
+    } else if use-inline-baseline and starts-inline(content) {
+      (make-hanging-cell(label, content, span),)
     } else if span == 1 {
       (make-label-cell(label), make-content-cell(content))
     } else {
