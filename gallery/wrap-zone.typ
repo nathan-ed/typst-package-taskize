@@ -1,6 +1,6 @@
 // Wrap zone: reserve a top-right corner for overlay content (e.g. a QR code)
 // and flow task rows around it.
-#import "@preview/taskize:0.2.9": tasks, taskize-wrap-zone
+#import "@preview/taskize:0.2.10": tasks, taskize-wrap-zone
 
 #set page(width: 12cm, height: auto, margin: 1cm)
 

@@ -355,6 +355,24 @@
   measure(block(width: width, content)).height
 }
 
+// Rigid content (a table with fixed columns, a fixed-size box, an image given
+// an explicit width) keeps exactly the same height at any width: it overflows
+// silently instead of adapting, so the height test alone can never reject it.
+// Compare its natural width too, but only when the height proves that nothing
+// adapted -- content whose height changes did adapt to the narrower track:
+// text and table cells wrap (height grows) and unconstrained images scale
+// down (height shrinks). Both fit and must stay judged by height alone.
+#let _fits-content-width(content, width, tol) = {
+  let nat = measure(content)
+  nat.width <= width + tol or calc.abs(_task-height-at-width(content, width) - nat.height) > tol
+}
+
+// A regular item fits a track of `width` when it introduces no new wrap
+// (height) and does not overflow it (width).
+#let _fits-at-width(content, width, base-h, tol) = {
+  _task-height-at-width(content, width) <= base-h + tol and _fits-content-width(content, width, tol)
+}
+
 #let _select-auto-fit-columns(
   task-items,
   max-cols,
@@ -396,13 +414,14 @@
           return false
         }
       } else {
-        // fill mode, regular item: auto-span until height matches base.
-        // Only height is checked — text always reflows to fit any width, so
-        // natural-width would reject long sentences even at full-row span.
+        // fill mode, regular item: auto-span until it fits. Height drives the
+        // test — text always reflows, so natural width alone would reject long
+        // sentences even at full-row span — but rigid content that cannot
+        // reflow is also checked against its natural width.
         let fitted = false
         for s in range(1, cols + 1) {
           let width = _task-content-width(available-width, cols, s, label-width, col-gut, indent-after, indent)
-          if _task-height-at-width(content, width) <= base-heights.at(i) + tol {
+          if _fits-at-width(content, width, base-heights.at(i), tol) {
             fitted = true
             break
           }
@@ -1115,7 +1134,7 @@
               _task-content-width(size.width, 1, 1, lw, col-gut, indent-after, blk-indent))
             for s in range(1, cols + 1) {
               let w = _task-content-width(size.width, cols, s, lw, col-gut, indent-after, blk-indent)
-              if _task-height-at-width(content, w) <= base-h + tol {
+              if _fits-at-width(content, w, base-h, tol) {
                 return (content, s)
               }
             }

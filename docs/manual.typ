@@ -1,4 +1,4 @@
-#import "@preview/taskize:0.2.9": tasks, tasks2, tasks3, tasks4, tasks-reset, tasks-setup, taskize-wrap-zone
+#import "@preview/taskize:0.2.10": tasks, tasks2, tasks3, tasks4, tasks-reset, tasks-setup, taskize-wrap-zone
 
 // =============================================================================
 // DOCUMENT SETUP
@@ -106,7 +106,7 @@
 Import the package in your Typst document:
 
 ```typst
-#import "@preview/taskize:0.2.9": tasks
+#import "@preview/taskize:0.2.10": tasks
 ```
 
 == Quick Start
@@ -217,6 +217,51 @@ because no no-wrap multi-column layout exists.
 A wide item auto-spans to fill the row in `"fill"` mode, while
 `"uniform"` keeps every item in one column and falls back to fewer columns
 when the widest item no longer fits.
+
+=== Rigid content: tables, figures and fixed-size graphics
+
+Most content adapts to a narrower column: text and table cells wrap, and an
+image with no explicit width scales down. Auto-fit measures that adaptation to
+decide how dense a layout can be.
+
+Content given a fixed size cannot adapt: a table with fixed columns of short
+cells, a `box` with an explicit `width`, an `image(..., width: 5cm)`. Such an
+item keeps exactly the same height however narrow its column, and would
+silently overflow into its neighbour. Auto-fit therefore also compares its
+natural width against the column it would land in, and gives it the columns it
+needs -- spanning them in `"fill"` mode, or lowering the column count for the
+whole block in `"uniform"` mode.
+
+#example(
+  [```typst
+  // Each table keeps its natural width: auto-fit packs
+  // as many per row as actually fit, and no more.
+  #let t(v) = table(
+    columns: 4, align: center, inset: 4pt,
+    [Souris], [$6$], [$9$], [$7$],
+    [Prix], [], [$#v$], [],
+  )
+  #tasks(columns: "auto-fit")[
+    + #t("31,5")
+    + #t("45,5")
+    + #t("14,4")
+    + #t("8")
+  ]
+  ```],
+  [
+    #let t(v) = table(
+      columns: 4, align: center, inset: 4pt,
+      [Souris], [$6$], [$9$], [$7$],
+      [Prix], [], [$#v$], [],
+    )
+    #tasks(columns: "auto-fit")[
+      + #t("31,5")
+      + #t("45,5")
+      + #t("14,4")
+      + #t("8")
+    ]
+  ]
+)
 
 #example(
   [```typst

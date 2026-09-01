@@ -298,6 +298,80 @@
     message: "uniform: figure captions should participate in wrap detection",
   )
 
+  // --- Rigid content: tables ----------------------------------------------
+  // A table with fixed columns keeps the same height at any width -- it
+  // overflows instead of wrapping -- so its natural width must be checked;
+  // height alone would happily accept it in any column count.
+
+  let data-table(cells) = table(
+    columns: 6,
+    inset: (x: 5pt, y: 4pt),
+    stroke: 0.5pt,
+    ..cells,
+  )
+  let wide-table = data-table((
+    [Souris], [$6$], [$9$], [$7$], [$15$], [$3$],
+    [Prix en euros], [], [], [$31,5$], [], [$13,5$],
+  ))
+  // Unbreakable numeric cells: this table has no narrower layout at all.
+  let huge-table = data-table((
+    [$1234567,89$], [$2345678,91$], [$3456789,12$], [$4567891,23$], [$5678912,34$], [$6789123,45$],
+    [$9876543,21$], [$8765432,19$], [$7654321,98$], [$6543219,87$], [$5432198,76$], [$4321987,65$],
+  ))
+
+  assert(
+    choose(range(6).map(_ => (wide-table, 1)), auto, mode: "uniform") < 6,
+    message: "uniform: a table wider than one sixth of the row should reduce the column count",
+  )
+
+  assert(
+    choose(((wide-table, 1), ([A], 1), ([B], 1)), 3, mode: "uniform") < 3,
+    message: "uniform: a wide table beside short items should reduce the column count",
+  )
+
+  assert(
+    choose(range(6).map(_ => (wide-table, 1)), auto) >=
+      choose(range(6).map(_ => (wide-table, 1)), auto, mode: "uniform"),
+    message: "fill: tables may auto-span, so fill should never be stricter than uniform",
+  )
+
+  assert(
+    choose(((huge-table, 1), ([A], 1), ([B], 1), ([C], 1)), 4) == 1,
+    message: "fill: a table wider than the whole row cannot be made to fit by spanning",
+  )
+
+  assert(
+    choose(((huge-table, 1), ([A], 1), ([B], 1), ([C], 1)), 4, mode: "uniform") == 1,
+    message: "uniform: a table wider than the whole row forces one column",
+  )
+
+  // --- Rigid vs adapting graphics -----------------------------------------
+  // Same rule as tables: a graphic given an explicit size cannot adapt and
+  // overflows, while an unconstrained image scales down and must not be
+  // penalised for its natural width.
+
+  let svg-source = bytes(
+    "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"120\" height=\"60\">"
+      + "<rect width=\"120\" height=\"60\" fill=\"#dddddd\"/></svg>",
+  )
+  let scaling-image = image(svg-source, format: "svg")
+  let rigid-image = image(svg-source, format: "svg", width: 20cm)
+
+  assert(
+    choose(range(4).map(_ => (scaling-image, 1)), 4) == 4,
+    message: "fill: images with no explicit width scale down and should keep four columns",
+  )
+
+  assert(
+    choose(((rigid-image, 1), ([A], 1), ([B], 1), ([C], 1)), 4) == 1,
+    message: "fill: an image wider than the whole row cannot be made to fit by spanning",
+  )
+
+  assert(
+    choose(range(4).map(_ => (test-box(5cm), 1)), 4, mode: "uniform") == 2,
+    message: "uniform: a 5cm fixed box should fit two but not three columns",
+  )
+
   // --- Span modes ----------------------------------------------------------
 
   // In fill mode, a full-width span is measured as a row-wide item and does
@@ -492,6 +566,24 @@ Auto-fit:
     )
   + Text
   + $a^2+b^2=c^2$
+]
+
+== Tables: rigid content must not overflow its column
+
+#let ratio-table(value) = table(
+  columns: 6,
+  align: center,
+  inset: (x: 5pt, y: 4pt),
+  stroke: 0.5pt,
+  [Souris], [$6$], [$9$], [$7$], [$15$], [$3$],
+  [Prix en euros], [], [], [$#value$], [], [$13,5$],
+)
+
+#tasks(columns: "auto-fit")[
+  + #ratio-table("31,5")
+  + #ratio-table("45,5")
+  + #ratio-table("14,4")
+  + #ratio-table("8")
 ]
 
 == Alias: `fit` should behave like `auto-fit`

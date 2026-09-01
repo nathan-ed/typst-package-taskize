@@ -1,4 +1,4 @@
-#import "@preview/taskize:0.2.9": tasks, tasks-reset
+#import "@preview/taskize:0.2.10": tasks, tasks-reset
 
 #set page(width: 12cm, height: auto, margin: 1cm)
 
