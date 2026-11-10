@@ -11,6 +11,9 @@
   label-format: "a)",           // "a)", "1)", "i)", "(a)", "(1)", custom function
   answer-lines: 0,              // dotted lines drawn under each task, for exam sheets
   answer-line-gap: 1.2em,       // spacing between those lines
+  answer-line-style: "dotted",  // "dotted", "dashed", "solid", or a stroke
+  answer-line-above: auto,      // space between the task and its first line
+  answer-line-below: auto,      // space after the last line
   column-gutter: 1em,
   row-gutter: 0.6em,
   max-columns: auto,           // auto = up to number of items for auto-fit
@@ -52,6 +55,9 @@
   label-format: none,
   answer-lines: none,
   answer-line-gap: none,
+  answer-line-style: none,
+  answer-line-above: none,
+  answer-line-below: none,
   column-gutter: none,
   row-gutter: none,
   max-columns: none,
@@ -73,6 +79,9 @@
     if label-format != none { new.label-format = label-format }
     if answer-lines != none { new.answer-lines = answer-lines }
     if answer-line-gap != none { new.answer-line-gap = answer-line-gap }
+    if answer-line-style != none { new.answer-line-style = answer-line-style }
+    if answer-line-above != none { new.answer-line-above = answer-line-above }
+    if answer-line-below != none { new.answer-line-below = answer-line-below }
     if column-gutter != none { new.column-gutter = column-gutter }
     if row-gutter != none { new.row-gutter = row-gutter }
     if max-columns != none { new.max-columns = max-columns }
@@ -172,18 +181,51 @@
 // =============================================================================
 
 // Convert number to label based on format
-/// Dotted lines to write an answer on, filling the width they are given.
+/// One answer line, filling the width it is given.
+///
+/// `style` is "dotted" (default), "dashed", "solid", or a stroke to draw the
+/// rule with — `(paint: gray, thickness: 0.6pt)` and friends.
+#let answer-rule(style: "dotted") = {
+  if style == "dotted" or style == auto or style == none {
+    box(width: 1fr, repeat[.])
+  } else if style == "dashed" {
+    box(width: 1fr, line(length: 100%, stroke: (thickness: 0.5pt, dash: "dashed")))
+  } else if style == "solid" {
+    box(width: 1fr, line(length: 100%, stroke: 0.5pt))
+  } else {
+    // A stroke (or anything `line` accepts as one) passed straight through.
+    box(width: 1fr, line(length: 100%, stroke: style))
+  }
+}
+
+/// Lines to write an answer on, filling the width they are given.
 ///
 /// Inside a task they span the column, which is what an exam sheet wants:
 ///   #tasks(columns: 2, answer-lines: 2)[...]
 /// or by hand, anywhere:
 ///   #answer-dots(3)
-#let answer-dots(count: 1, gap: 1.2em) = {
-  if count <= 0 { return none }
-  stack(
+///   #answer-dots(2, style: "solid", above: 0.8em, below: 1em)
+///
+/// `gap` separates the lines from each other, `above` and `below` separate the
+/// block from the item above and whatever follows; `auto` leaves Typst's own
+/// block spacing in place.
+#let answer-dots(..args, count: 1, gap: 1.2em, style: "dotted", above: auto, below: auto) = {
+  let n = if args.pos().len() > 0 { args.pos().at(0) } else { count }
+  if n <= 0 { return none }
+  let lines = stack(
     spacing: gap,
-    ..range(count).map(_ => box(width: 1fr, repeat[.])),
+    ..range(n).map(_ => answer-rule(style: style)),
   )
+  if above == auto and below == auto {
+    lines
+  } else {
+    block(
+      above: if above == auto { auto } else { above },
+      below: if below == auto { auto } else { below },
+      width: 100%,
+      lines,
+    )
+  }
 }
 
 #let format-label(n, format) = {
@@ -315,9 +357,14 @@
   cols == "auto-fit" or cols == "fit"
 }
 
+// Absolute value of a length setting. Under `measure`, which is how these were
+// resolved before, a ratio is taken of an unbounded width and counts for
+// nothing, so only the length part of a relative value is kept.
 #let _resolve-length(value) = {
-  if type(value) in (length, relative) {
-    measure(box(width: value)).width
+  if type(value) == length {
+    value.to-absolute()
+  } else if type(value) == relative {
+    value.length.to-absolute()
   } else {
     value
   }
@@ -337,43 +384,71 @@
   }
 }
 
-#let _task-content-width(total-width, cols, span, lbl-width, col-gut, indent-after, indent) = {
-  let cols = calc.max(1, cols)
-  let span = calc.min(calc.max(1, span), cols)
-  let label-width = _resolve-length(lbl-width)
-  let column-gutter = _resolve-length(col-gut)
-  let label-gutter = _resolve-length(indent-after)
-  let block-indent = _resolve-length(indent)
-  let inner-width = total-width - block-indent
-  let fixed-width = cols * label-width + cols * label-gutter + (cols - 1) * column-gutter
-  let content-track = (inner-width - fixed-width) / cols
-  if content-track < 0pt { content-track = 0pt }
-  content-track * span + (span - 1) * (label-width + label-gutter + column-gutter)
-}
-
 #let _task-height-at-width(content, width) = {
   measure(block(width: width, content)).height
 }
 
-// Rigid content (a table with fixed columns, a fixed-size box, an image given
-// an explicit width) keeps exactly the same height at any width: it overflows
-// silently instead of adapting, so the height test alone can never reject it.
-// Compare its natural width too, but only when the height proves that nothing
-// adapted -- content whose height changes did adapt to the narrower track:
-// text and table cells wrap (height grows) and unconstrained images scale
-// down (height shrinks). Both fit and must stay judged by height alone.
-#let _fits-content-width(content, width, tol) = {
-  let nat = measure(content)
-  nat.width <= width + tol or calc.abs(_task-height-at-width(content, width) - nat.height) > tol
+// Inline content that lays out the same at any width it fits in: its natural
+// width alone tells whether it wraps, so it never has to be laid out again to
+// find out. Stricter than is-inline-content on one point: a spacing given as a
+// share of the line (`h(30%)`) grows with the track and is left to measurement.
+#let _is-rigid-inline(node) = {
+  if type(node) != content { return is-inline-content(node) }
+  let fname = repr(node.func())
+  if fname == "h" { return type(node.amount) in (length, fraction) }
+  if fname == "sequence" { return node.children.all(_is-rigid-inline) }
+  if fname == "styled" { return _is-rigid-inline(node.child) }
+  is-inline-content(node)
 }
 
-// A regular item fits a track of `width` when it introduces no new wrap
-// (height) and does not overflow it (width).
-#let _fits-at-width(content, width, base-h, tol) = {
-  _task-height-at-width(content, width) <= base-h + tol and _fits-content-width(content, width, tol)
+// Size of an item that is a container of fixed size, none otherwise: a `block`
+// or `box` given both an absolute width and an absolute height, alone in its
+// item. Such a container has that size whatever it holds and whatever room it
+// is given, so auto-fit takes the size from its fields and never lays the item
+// out. Worth using around an expensive figure: measuring one costs as much as
+// drawing it, on every layout pass.
+#let _fixed-size(node) = {
+  if type(node) != content { return none }
+  let f = node.func()
+  if f == block or f == box {
+    if not (node.has("width") and node.has("height")) { return none }
+    for value in (node.width, node.height) {
+      if type(value) == relative {
+        if value.ratio != 0% { return none }
+      } else if type(value) != length {
+        return none
+      }
+    }
+    return (width: _resolve-length(node.width), height: _resolve-length(node.height))
+  }
+  if repr(f) == "sequence" {
+    // Whitespace around the container is not content of its own
+    let rest = node.children.filter(child => {
+      let name = repr(child.func())
+      not (name in ("space", "parbreak") or (name == "text" and child.text.trim() == ""))
+    })
+    if rest.len() == 1 { return _fixed-size(rest.first()) }
+  }
+  none
 }
 
-#let _select-auto-fit-columns(
+// Chooses the number of columns for `columns: "auto-fit"` and, in fill mode,
+// the span each item needs. Returns (cols:, spans:), one span per item.
+//
+// Laying an item out is the expensive part (a figure is rebuilt from scratch
+// each time, and Typst redoes every measurement on each layout pass), so the
+// search is arranged to lay items out as little as possible:
+//   - nothing is measured when a single column is all there can be;
+//   - each item is measured once at its natural size, and a container of
+//     fixed size not at all;
+//   - column counts are tried from the largest down and the first that fits
+//     wins, after a pass on natural widths alone that discards the counts an
+//     item is plainly too wide for;
+//   - inline items (text, inline math) are judged on their natural width,
+//     without any further layout;
+//   - the height at full width, the reference "no new wrap" is judged against,
+//     is only measured for the items that turn out to need it.
+#let _auto-fit(
   task-items,
   max-cols,
   fmt,
@@ -387,61 +462,158 @@
   tolerance,
   available-width,
 ) = {
-  if task-items.len() == 0 { return 1 }
+  let n = task-items.len()
+  let explicit = task-items.map(item-data => item-data.at(1))
+  // One column: spans are irrelevant, the grid clamps them
+  let fallback = (cols: 1, spans: explicit)
+  if n == 0 { return fallback }
 
-  let max-cols = if max-cols == auto { task-items.len() } else { max-cols }
-  max-cols = calc.max(1, calc.min(max-cols, task-items.len()))
-  let label-width = _compute-label-width(task-items, fmt, lbl-width, lbl-weight, indent-after, start-num)
+  let max-cols = if max-cols == auto { n } else { max-cols }
+  max-cols = calc.max(1, calc.min(max-cols, n))
+  if max-cols == 1 { return fallback }
+  let uniform = mode == "uniform"
   let tol = _resolve-length(tolerance)
 
-  let base-heights = ()
-  for item-data in task-items {
-    let content = item-data.at(0)
-    let width = _task-content-width(available-width, 1, 1, label-width, col-gut, indent-after, indent)
-    base-heights.push(_task-height-at-width(content, width))
+  // Track geometry, with every length resolved once
+  let label-width = _resolve-length(
+    _compute-label-width(task-items, fmt, lbl-width, lbl-weight, indent-after, start-num),
+  )
+  let column-gutter = _resolve-length(col-gut)
+  let label-gutter = _resolve-length(indent-after)
+  let inner-width = available-width - _resolve-length(indent)
+  // Width left to the content of an item spanning `span` of `cols` columns
+  let track(cols, span) = {
+    let span = calc.min(calc.max(1, span), cols)
+    let fixed-width = cols * label-width + cols * label-gutter + (cols - 1) * column-gutter
+    let content-track = (inner-width - fixed-width) / cols
+    if content-track < 0pt { content-track = 0pt }
+    content-track * span + (span - 1) * (label-width + label-gutter + column-gutter)
+  }
+  let full = track(1, 1)
+
+  let contents = task-items.map(item-data => item-data.at(0))
+  let fixed = contents.map(_fixed-size)
+  let rigid = fixed.map(size => size != none)
+  let rigid-inline = contents.map(_is-rigid-inline)
+
+  // uniform: every item is pinned to one column; fill: an item with a declared
+  // span is pinned to that span.
+  let pinned-span(i) = if uniform { 1 } else if explicit.at(i) > 1 { explicit.at(i) } else { none }
+
+  // Natural sizes, the cheap items first (text, inline math, fixed-size
+  // containers): their width may already rule out the higher column counts,
+  // or all of them, before any expensive item (a figure) is measured.
+  let nat = range(n).map(i => {
+    if rigid.at(i) { fixed.at(i) } else if rigid-inline.at(i) { measure(contents.at(i)) } else { none }
+  })
+  while max-cols > 1 and range(n).any(i => {
+    let span = pinned-span(i)
+    nat.at(i) != none and span != none and nat.at(i).width > track(max-cols, span) + tol
+  }) {
+    max-cols -= 1
+  }
+  if max-cols == 1 { return fallback }
+  nat = range(n).map(i => if nat.at(i) != none { nat.at(i) } else { measure(contents.at(i)) })
+  // Typst caches a measurement, so asking twice for the same width is free
+  let height-at(i, width) = _task-height-at-width(contents.at(i), width)
+
+  // A pinned item fits a track when it does not overflow it (natural width)
+  // and narrowing introduces no new wrap (height).
+  let fits-pinned(i, width) = {
+    let m = nat.at(i)
+    if m.width > width + tol { return false }
+    if rigid.at(i) or (rigid-inline.at(i) and m.width <= width) { return true }
+    height-at(i, width) <= height-at(i, full) + tol
   }
 
-  let fits-cols(cols) = {
-    for (i, item-data) in task-items.enumerate() {
-      let content = item-data.at(0)
-      let explicit-span = item-data.at(1)
-      if mode == "uniform" or explicit-span > 1 {
-        // uniform: every item pinned to one column
-        // explicit span items: use their declared span, capped at cols
-        let span = if mode == "uniform" { 1 } else { calc.min(explicit-span, cols) }
-        let width = _task-content-width(available-width, cols, span, label-width, col-gut, indent-after, indent)
-        if measure(content).width > width + tol or _task-height-at-width(content, width) > base-heights.at(i) + tol {
-          return false
-        }
+  // A regular fill-mode item fits a track when it is no taller there than at
+  // full width. Height drives the test (text always reflows, so natural width
+  // alone would reject long sentences even at full-row span), but rigid
+  // content (a table with fixed columns, a fixed-size box, an image given an
+  // explicit width) keeps the same height at any width and overflows silently:
+  // when it is wider than the track, it must prove it adapted, by a height
+  // that differs from the natural one (text wrapped, an image scaled down).
+  let fits-flow(i, width) = {
+    let m = nat.at(i)
+    if rigid.at(i) { return m.width <= width + tol }
+    if rigid-inline.at(i) and m.width <= full {
+      // A single line at full width: it wraps exactly when the track is narrower
+      if m.width <= width { return true }
+      if m.width > width + tol { return false }
+    }
+    let h = height-at(i, width)
+    if h > height-at(i, full) + tol { return false }
+    m.width <= width + tol or calc.abs(h - m.height) > tol
+  }
+
+  // Smallest span a regular fill-mode item fits in, none if there is none
+  let min-span(i, cols) = {
+    let m = nat.at(i)
+    let s = 1
+    while s <= cols {
+      let width = track(cols, s)
+      if fits-flow(i, width) { return s }
+      if (
+        not rigid-inline.at(i) and m.width > width + tol
+          and (rigid.at(i) or calc.abs(height-at(i, width) - m.height) <= tol)
+      ) {
+        // Too wide and unchanged by the narrow track: rigid. It will not adapt
+        // to a wider track either, so skip to the first span that holds it.
+        s += 1
+        while s <= cols and m.width > track(cols, s) + tol { s += 1 }
       } else {
-        // fill mode, regular item: auto-span until it fits. Height drives the
-        // test — text always reflows, so natural width alone would reject long
-        // sentences even at full-row span — but rigid content that cannot
-        // reflow is also checked against its natural width.
-        let fitted = false
-        for s in range(1, cols + 1) {
-          let width = _task-content-width(available-width, cols, s, label-width, col-gut, indent-after, indent)
-          if _fits-at-width(content, width, base-heights.at(i), tol) {
-            fitted = true
-            break
-          }
-        }
-        if not fitted { return false }
+        s += 1
       }
     }
-    true
+    none
   }
 
-  let best = 1
-  for cols in range(1, max-cols + 1) {
-    if fits-cols(cols) {
-      best = cols
-    } else {
-      break
+  // A regular fill-mode item can always take the whole row; if even that
+  // fails (rigid and wider than the line), no column count fits.
+  if not uniform {
+    for i in range(n) {
+      if (
+        explicit.at(i) <= 1 and nat.at(i).width > full + tol
+          and (rigid.at(i) or calc.abs(height-at(i, full) - nat.at(i).height) <= tol)
+      ) {
+        return fallback
+      }
     }
   }
-  best
+
+  // Spans at `cols` columns, none if some item does not fit
+  let try-cols(cols) = {
+    // Natural widths first: no layout needed to reject
+    for i in range(n) {
+      let span = pinned-span(i)
+      if span != none and nat.at(i).width > track(cols, span) + tol { return none }
+    }
+    let spans = ()
+    for i in range(n) {
+      let span = pinned-span(i)
+      if span != none {
+        if not fits-pinned(i, track(cols, span)) { return none }
+        spans.push(explicit.at(i))
+      } else {
+        let s = min-span(i, cols)
+        if s == none { return none }
+        spans.push(s)
+      }
+    }
+    spans
+  }
+
+  let cols = max-cols
+  while cols > 1 {
+    let spans = try-cols(cols)
+    if spans != none { return (cols: cols, spans: spans) }
+    cols -= 1
+  }
+  fallback
 }
+
+// The column count alone (same arguments as _auto-fit)
+#let _select-auto-fit-columns(..args) = _auto-fit(..args).cols
 
 #let render-tasks-grid(
   task-items,
@@ -810,6 +982,9 @@
   label-format: auto,
   answer-lines: auto,       // dotted lines under each task (exam sheets)
   answer-line-gap: auto,
+  answer-line-style: auto,  // "dotted" (default), "dashed", "solid", or a stroke
+  answer-line-above: auto,  // space between the task and its first answer line
+  answer-line-below: auto,  // space after the last answer line
   start: 1,
   resume: false,
   column-gutter: auto,
@@ -1023,6 +1198,9 @@
   // Extract and flatten all items
   let ans-lines = if answer-lines == auto { cfg.at("answer-lines", default: 0) } else { answer-lines }
   let ans-gap = if answer-line-gap == auto { cfg.at("answer-line-gap", default: 1.2em) } else { answer-line-gap }
+  let ans-style = if answer-line-style == auto { cfg.at("answer-line-style", default: "dotted") } else { answer-line-style }
+  let ans-above = if answer-line-above == auto { cfg.at("answer-line-above", default: auto) } else { answer-line-above }
+  let ans-below = if answer-line-below == auto { cfg.at("answer-line-below", default: auto) } else { answer-line-below }
 
   // An array spells the items out one by one. Typst has no inline list syntax:
   // "+ One + Two" on a single line is one item to it, the pluses being plain
@@ -1045,7 +1223,10 @@
   // column they land in, so they follow the layout rather than a fixed width.
   if ans-lines > 0 {
     task-items = task-items.map(item-data => (
-      item-data.at(0) + answer-dots(count: ans-lines, gap: ans-gap),
+      item-data.at(0) + answer-dots(
+        count: ans-lines, gap: ans-gap, style: ans-style,
+        above: ans-above, below: ans-below,
+      ),
       item-data.at(1),
     ))
   }
@@ -1082,10 +1263,10 @@
     layout(size => {
       let narrow = calc.max(size.width - zone-w, size.width * 0.35)
       let cols = if _is-auto-fit-columns(requested-cols) {
-        _select-auto-fit-columns(
+        _auto-fit(
           task-items, max-cols, fmt, col-gut, lbl-width, lbl-weight,
           indent-after, blk-indent, start-num, fit-mode, fit-tolerance, narrow,
-        )
+        ).cols
       } else {
         requested-cols
       }
@@ -1116,30 +1297,16 @@
     if _is-auto-fit-columns(requested-cols) {
       assert(fit-mode in ("fill", "uniform"), message: "auto-fit-mode must be \"fill\" or \"uniform\"")
       layout(size => {
-        let cols = _select-auto-fit-columns(
+        let fit = _auto-fit(
           task-items, max-cols, fmt, col-gut, lbl-width, lbl-weight,
           indent-after, blk-indent, start-num, fit-mode, fit-tolerance, size.width,
         )
-        // In fill mode, compute the minimum span each regular item needs to fit
-        // at the chosen column count, so wide items auto-span rather than forcing
+        let cols = fit.cols
+        // In fill mode each regular item takes the smallest span it fits in at
+        // the chosen column count, so wide items auto-span rather than forcing
         // a lower column count.
         let render-items = if fit-mode == "fill" {
-          let lw = _compute-label-width(task-items, fmt, lbl-width, lbl-weight, indent-after, start-num)
-          let tol = _resolve-length(fit-tolerance)
-          task-items.map(item-data => {
-            let content = item-data.at(0)
-            let explicit-span = item-data.at(1)
-            if explicit-span > 1 { return item-data }
-            let base-h = _task-height-at-width(content,
-              _task-content-width(size.width, 1, 1, lw, col-gut, indent-after, blk-indent))
-            for s in range(1, cols + 1) {
-              let w = _task-content-width(size.width, cols, s, lw, col-gut, indent-after, blk-indent)
-              if _fits-at-width(content, w, base-h, tol) {
-                return (content, s)
-              }
-            }
-            (content, cols)
-          })
+          task-items.zip(fit.spans).map(((item-data, span)) => (item-data.at(0), span))
         } else {
           task-items
         }

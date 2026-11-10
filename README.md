@@ -1,6 +1,6 @@
 # taskize
 
-[![taskize on Typst Universe](https://img.shields.io/badge/Typst_Universe-v._0.2.10-239dad?labelColor=eee)](https://typst.app/universe/package/taskize)
+[![taskize on Typst Universe](https://img.shields.io/badge/Typst_Universe-v._0.2.11-239dad?labelColor=eee)](https://typst.app/universe/package/taskize)
 [![Full package manual as PDF](https://img.shields.io/badge/Manual-pdf-333333?labelColor=eee)](https://github.com/nathan-ed/typst-package-taskize/blob/eeb21db82c1cbf66880c97be80b14b287e3b0e3b/docs/manual.pdf)
 [![Distributed under the MIT license](https://img.shields.io/badge/License-MIT-333333?labelColor=eee)](LICENSE)
 
@@ -42,7 +42,7 @@ A full manual is available as a [PDF](https://github.com/nathan-ed/typst-package
 ## Quick Start
 
 ```typst
-#import "@preview/taskize:0.2.10": tasks
+#import "@preview/taskize:0.2.11": tasks
 
 #tasks[
   + First item
@@ -57,7 +57,7 @@ A full manual is available as a [PDF](https://github.com/nathan-ed/typst-package
 ### Simple Two-Column Layout
 
 ```typst
-#import "@preview/taskize:0.2.10": tasks
+#import "@preview/taskize:0.2.11": tasks
 
 #tasks[
   + $2 + 3 = ?$
@@ -70,7 +70,7 @@ A full manual is available as a [PDF](https://github.com/nathan-ed/typst-package
 ### Three-Column Layout
 
 ```typst
-#import "@preview/taskize:0.2.10": tasks
+#import "@preview/taskize:0.2.11": tasks
 
 #tasks(columns: 3)[
   + Option A
@@ -87,7 +87,7 @@ A full manual is available as a [PDF](https://github.com/nathan-ed/typst-package
 Use `columns: "auto-fit"` to choose the largest column count that does not make any item wrap or overflow compared with a one-column layout. Limit the search with `max-columns`.
 
 ```typst
-#import "@preview/taskize:0.2.10": tasks
+#import "@preview/taskize:0.2.11": tasks
 
 #tasks(columns: "auto-fit", max-columns: 4)[
   + Medium length task with detail
@@ -106,10 +106,28 @@ wraps at one-column width, so a wide item can force the whole block to fewer
 columns. If an item already wraps in the one-column layout, auto-fit keeps
 one column, because no no-wrap multi-column layout exists.
 
+Auto-fit has to lay an item out to measure it, and an item that draws
+itself (a CeTZ canvas, a plot) is computed again each time. Text and inline
+math are judged on their natural width alone, and a `block` or `box` given
+both a fixed `width` and a fixed `height` is not laid out at all: its size is
+read from the call. Wrap an expensive figure in one when you know its size.
+
+```typst
+#tasks(columns: "auto-fit", max-columns: 4)[
+  + #block(width: 4cm, height: 3cm, figure-a)
+  + #block(width: 4cm, height: 3cm, figure-b)
+]
+```
+
+Settings passed to `tasks` itself (or once with
+`#let tasks = tasks.with(columns: "auto-fit")`) are known on the first layout
+pass. Settings made with `tasks-setup` are only known on the second one, so a
+document full of figures compiles faster with the former.
+
 ### Shorthand Functions
 
 ```typst
-#import "@preview/taskize:0.2.10": tasks2, tasks3, tasks4
+#import "@preview/taskize:0.2.11": tasks2, tasks3, tasks4
 
 // Two columns
 #tasks2[
@@ -138,7 +156,7 @@ one column, because no no-wrap multi-column layout exists.
 ### Built-in Formats
 
 ```typst
-#import "@preview/taskize:0.2.10": tasks
+#import "@preview/taskize:0.2.11": tasks
 
 // Lowercase letters with parenthesis (default)
 #tasks(label: "a)")[+ One  + Two  + Three]
@@ -171,7 +189,7 @@ one column, because no no-wrap multi-column layout exists.
 ### Custom Label Function
 
 ```typst
-#import "@preview/taskize:0.2.10": tasks
+#import "@preview/taskize:0.2.11": tasks
 
 // Custom emoji labels
 #tasks(label: n => "Q" + str(n) + ":")[
@@ -188,7 +206,7 @@ one column, because no no-wrap multi-column layout exists.
 Items fill rows first: `a b | c d | e f`
 
 ```typst
-#import "@preview/taskize:0.2.10": tasks
+#import "@preview/taskize:0.2.11": tasks
 
 #tasks(columns: 2, flow: "horizontal")[
   + a
@@ -209,7 +227,7 @@ Items fill rows first: `a b | c d | e f`
 Items fill columns first: `a c e | b d f`
 
 ```typst
-#import "@preview/taskize:0.2.10": tasks
+#import "@preview/taskize:0.2.11": tasks
 
 #tasks(columns: 2, flow: "vertical")[
   + a
@@ -228,7 +246,7 @@ Items fill columns first: `a c e | b d f`
 ## Resuming Numbering
 
 ```typst
-#import "@preview/taskize:0.2.10": tasks, tasks-reset
+#import "@preview/taskize:0.2.11": tasks, tasks-reset
 
 #tasks[
   + First
@@ -257,7 +275,7 @@ Some text between task blocks...
 ## Starting from a Specific Number
 
 ```typst
-#import "@preview/taskize:0.2.10": tasks
+#import "@preview/taskize:0.2.11": tasks
 
 #tasks(start: 5)[
   + This is item 5
@@ -271,7 +289,7 @@ Some text between task blocks...
 Set defaults for all tasks in your document:
 
 ```typst
-#import "@preview/taskize:0.2.10": tasks, tasks-setup
+#import "@preview/taskize:0.2.11": tasks, tasks-setup
 
 // Configure global defaults
 #tasks-setup(
@@ -302,7 +320,7 @@ Set defaults for all tasks in your document:
 Control the vertical alignment of labels relative to content:
 
 ```typst
-#import "@preview/taskize:0.2.10": tasks
+#import "@preview/taskize:0.2.11": tasks
 
 // Center alignment (default)
 #tasks(label-baseline: "center")[
@@ -329,7 +347,7 @@ Control the vertical alignment of labels relative to content:
 Make labels stand out by using bold weight:
 
 ```typst
-#import "@preview/taskize:0.2.10": tasks
+#import "@preview/taskize:0.2.11": tasks
 
 // Bold labels for emphasis
 #tasks(label-weight: "bold")[
@@ -350,7 +368,7 @@ Make labels stand out by using bold weight:
 Items can span multiple columns using the `+()` or `+(N)` syntax (no space after `+`). This is similar to LaTeX's `\task*` command:
 
 ```typst
-#import "@preview/taskize:0.2.10": tasks
+#import "@preview/taskize:0.2.11": tasks
 
 #tasks(columns: 3)[
   + Short
@@ -385,6 +403,57 @@ Items can span multiple columns using the `+()` or `+(N)` syntax (no space after
 - Column spans are clamped to the total number of columns
 - Great for adding explanations, headings, or long content within lists
 
+### Answer Lines
+
+Room to write in, under each task — the lines fill the column they land
+in, so they follow the layout instead of a fixed width.
+
+```typst
+#import "@preview/taskize:0.2.11": tasks
+
+#tasks(columns: 2, answer-lines: 2)[
+  + Calculate $2 + 2$
+  + Calculate $3 times 5$
+]
+```
+
+`answer-line-style` picks how they are drawn — `"dotted"` (default),
+`"dashed"`, `"solid"`, or any stroke, e.g. `(paint: gray, thickness: 0.6pt)`.
+`answer-line-gap` sets the distance between two lines, and
+`answer-line-above` / `answer-line-below` the distance to the task above and
+to whatever follows (`auto` leaves Typst's own block spacing in place).
+
+```typst
+#tasks(
+  columns: 2,
+  answer-lines: 3,
+  answer-line-style: "solid",
+  answer-line-gap: 1.6em,
+  answer-line-above: 0.8em,
+  answer-line-below: 1.4em,
+)[
+  + Solve $x^2 = 9$
+  + Expand $(x + 1)^2$
+]
+```
+
+All of them are settable document-wide with `tasks-setup`. To draw lines
+outside a task list, `answer-dots` takes the same options:
+
+```typst
+#answer-dots(3)
+#answer-dots(2, style: "solid", gap: 1.4em, above: 0.8em)
+```
+
+Each line fills the cell it lands in rather than a fixed length, so the
+lines follow whatever layout the block ends up with: an item spanning two
+columns gets a line twice as long, `columns: "auto-fit"`, `flow: "vertical"`,
+`row-gutter: "auto"`, a nested `tasks` call and a `wrap-zone` all keep their
+own widths, and inside Typst's own `#columns()` the lines fit the text
+column. Note that the lines are drawn under *every* item, a
+`+ () instruction` spanning the full row included — keep such a heading
+outside the `tasks` call if it should not get one.
+
 ## Parameters Reference
 
 ### `tasks` Function
@@ -394,8 +463,11 @@ Items can span multiple columns using the `+()` or `+(N)` syntax (no space after
 | `columns` | int/string | 2 | Number of columns, or `"auto-fit"` to choose the largest no-wrap count |
 | `label` | string/function | `"a)"` | Label format (shorthand for `label-format`). `"enum"` follows the document's `enum` numbering, one level per nesting depth |
 | `label-format` | string/function | `"a)"` | Label format |
-| `answer-lines` | int | 0 | Dotted lines drawn under each task, for exam sheets |
+| `answer-lines` | int | 0 | Ruled lines drawn under each task, for exam sheets |
 | `answer-line-gap` | length | 1.2em | Spacing between those lines |
+| `answer-line-style` | string/stroke | `"dotted"` | `"dotted"`, `"dashed"`, `"solid"`, or a stroke to draw the rules with |
+| `answer-line-above` | length/auto | auto | Space between the task and its first answer line |
+| `answer-line-below` | length/auto | auto | Space after the last answer line |
 | `start` | int | 1 | Starting number for labels |
 | `resume` | bool | false | Continue numbering from previous block |
 | `column-gutter` | length | 1em | Space between columns |
@@ -437,7 +509,7 @@ Items can span multiple columns using the `+()` or `+(N)` syntax (no space after
 ### Math Exercise Sheet
 
 ```typst
-#import "@preview/taskize:0.2.10": tasks
+#import "@preview/taskize:0.2.11": tasks
 
 = Algebra Practice
 
@@ -463,7 +535,7 @@ Solve for $x$:
 ### Multiple Choice Questions
 
 ```typst
-#import "@preview/taskize:0.2.10": tasks
+#import "@preview/taskize:0.2.11": tasks
 
 *Question 1:* What is the capital of France?
 
@@ -487,7 +559,7 @@ Solve for $x$:
 ### Vocabulary List
 
 ```typst
-#import "@preview/taskize:0.2.10": tasks
+#import "@preview/taskize:0.2.11": tasks
 
 = French Vocabulary
 
@@ -530,6 +602,16 @@ MIT License - see LICENSE file for details.
 ## Changelog
 
 All notable changes to taskize are documented here.
+
+### [0.2.11] - 2026-11-10
+
+#### Changed
+- **`columns: "auto-fit"` lays items out far less.** Column counts are tried from the largest down, after a pass on natural widths alone that discards the counts an item is plainly too wide for. Text and inline math are judged on their natural width without any further layout, and nothing is measured when a single column is all there can be. The column counts and spans chosen are the ones 0.2.10 chose (checked on several thousand generated lists, in both modes); a document of short items compiles faster and holds less memory.
+- **A `block` or `box` with a fixed `width` and `height` is not measured at all** by auto-fit: its size is read from the call. Measuring a figure that draws itself (a CeTZ canvas, a plot) costs as much as drawing it, on every layout pass, so wrapping such a figure in a fixed-size container brings auto-fit down to the cost of a fixed column count.
+
+#### Added
+- **`answer-line-style`, `answer-line-above`, `answer-line-below`** on `tasks`, `tasks-setup` and `answer-dots` (as `style`, `above`, `below`): answer lines can be dotted, dashed, solid or drawn with any stroke, and their distance to the task and to what follows is adjustable.
+- **`answer-rule`**, a single answer line filling the width it is given.
 
 ### [0.2.10] - 2026-09-01
 

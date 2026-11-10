@@ -1,4 +1,4 @@
-#import "@preview/taskize:0.2.10": tasks, tasks2, tasks3, tasks4, tasks-reset, tasks-setup, taskize-wrap-zone
+#import "@preview/taskize:0.2.11": tasks, tasks2, tasks3, tasks4, tasks-reset, tasks-setup, taskize-wrap-zone
 
 // =============================================================================
 // DOCUMENT SETUP
@@ -106,7 +106,7 @@
 Import the package in your Typst document:
 
 ```typst
-#import "@preview/taskize:0.2.10": tasks
+#import "@preview/taskize:0.2.11": tasks
 ```
 
 == Quick Start
@@ -441,6 +441,39 @@ column slot. The same difference applies with 2 or 3 columns.
   ]
 )
 
+=== What auto-fit measures, and what it costs
+
+To measure an item, auto-fit has to lay it out. For text that is cheap. An
+item that draws itself -- a CeTZ canvas, a plot -- is computed again for the
+measurement, on every layout pass of the document, on top of being computed
+for the page. Auto-fit therefore measures as little as it can:
+
+- text and inline math are judged on their natural width alone;
+- a `block` or `box` given both a fixed `width` and a fixed `height` is not
+  laid out at all: its size is read from the call;
+- nothing is measured when a single column is all there can be (one item, or
+  `max-columns: 1`).
+
+Wrap an expensive figure in a fixed-size container when you know its size, and
+auto-fit costs no more than a fixed column count:
+
+```typst
+#tasks(columns: "auto-fit", max-columns: 4)[
+  + #block(width: 4cm, height: 3cm, figure-a)
+  + #block(width: 4cm, height: 3cm, figure-b)
+]
+```
+
+A width or height given as a share of the available room (`50%`) does not
+count as fixed, and such a container is measured like any other content.
+
+Settings passed to `tasks` itself, or once with
+`#let tasks = tasks.with(columns: "auto-fit")`, are known on the first layout
+pass. Settings made with `tasks-setup` live in a state, which a document only
+knows from its second pass on: the first one lays everything out with the
+defaults, then again with the real settings. On a document full of figures,
+the former spares a whole pass.
+
 == Labels and Formats
 
 #example(
@@ -511,6 +544,70 @@ Horizontal is default. Use `flow: "vertical"` to fill columns top-to-bottom.
     + f
   ]]
 )
+
+== Answer Lines
+
+Room to write in, under each task. The lines fill the column they land in,
+so they follow the layout rather than a fixed width.
+
+#example(
+  [```typst
+  #tasks(columns: 2, answer-lines: 2)[
+    + Calculate $2 + 2$
+    + Calculate $3 times 5$
+  ]
+  ```],
+  [#tasks(columns: 2, answer-lines: 2)[
+    + Calculate $2 + 2$
+    + Calculate $3 times 5$
+  ]]
+)
+
+`answer-line-style` picks how a line is drawn: `"dotted"` (default),
+`"dashed"`, `"solid"`, or any stroke such as `(paint: gray, thickness: 0.6pt)`.
+`answer-line-gap` separates the lines from one another, while
+`answer-line-above` and `answer-line-below` separate the block from the task
+above it and from whatever follows — `auto` leaves Typst's own block spacing
+in place.
+
+#example(
+  [```typst
+  #tasks(
+    columns: 2,
+    answer-lines: 3,
+    answer-line-style: "solid",
+    answer-line-gap: 1.6em,
+    answer-line-above: 0.8em,
+    answer-line-below: 1.4em,
+  )[
+    + Solve $x^2 = 9$
+    + Expand $(x + 1)^2$
+  ]
+  ```],
+  [#tasks(
+    columns: 2,
+    answer-lines: 3,
+    answer-line-style: "solid",
+    answer-line-gap: 1.6em,
+    answer-line-above: 0.8em,
+    answer-line-below: 1.4em,
+  )[
+    + Solve $x^2 = 9$
+    + Expand $(x + 1)^2$
+  ]]
+)
+
+Outside a task list, `answer-dots` draws the same lines anywhere and takes
+the same options: `#answer-dots(3)` or
+`#answer-dots(2, style: "solid", gap: 1.4em, above: 0.8em)`.
+
+Each line fills the cell it lands in rather than a fixed length, so the lines
+follow whatever layout the block ends up with: an item spanning two columns
+gets a line twice as long, and auto-fit, vertical flow, adaptive row heights,
+a nested `tasks` call, a wrap zone and Typst's own `#raw("#columns()")` each
+keep their own widths. The lines are drawn under _every_ item, a full-row
+`#raw("+ () instruction")` included — keep such a heading outside the `tasks`
+call if it should not get one.
 
 == Adaptive Row Heights
 
@@ -736,6 +833,11 @@ The `tasks()` function supports the following parameters:
   [max-columns], [int/auto], [auto], [Maximum column count tested by auto-fit; `auto` means up to the number of items],
   [auto-fit-mode], [string], ["fill"], [`"fill"` measures spans at their rendered width; `"uniform"` requires every item to fit one ordinary column],
   [auto-fit-tolerance], [length], [0.5pt], [Measurement tolerance for auto-fit wrap detection],
+  [answer-lines], [int], [0], [Ruled lines drawn under each task, for exam sheets],
+  [answer-line-gap], [length], [1.2em], [Spacing between those lines],
+  [answer-line-style], [string/stroke], ["dotted"], [`"dotted"`, `"dashed"`, `"solid"`, or a stroke to draw the rules with],
+  [answer-line-above], [length/auto], [auto], [Space between the task and its first answer line],
+  [answer-line-below], [length/auto], [auto], [Space after the last answer line],
   [label-width], [auto/length], [auto], [Reserved width for labels],
   [label-align], [alignment], [right], [Label alignment],
   [label-baseline], [string/length], ["center"], [Vertical alignment of labels. With `"center"` (default), inline content (text, math) shares the same paragraph line as the label for true baseline alignment. Use `"top"`, `"bottom"`, or a length offset to override.],

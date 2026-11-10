@@ -1,5 +1,5 @@
 // Auto-fit columns: the densest layout that nothing overflows or wraps into.
-#import "@preview/taskize:0.2.10": tasks
+#import "@preview/taskize:0.2.11": tasks
 
 #set page(width: 11cm, height: auto, margin: 6mm)
 #set text(size: 11pt)
