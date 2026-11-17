@@ -1,4 +1,4 @@
-#import "@preview/taskize:0.2.11": tasks, tasks2, tasks3, tasks4, tasks-reset, tasks-setup, taskize-wrap-zone
+#import "@preview/taskize:0.2.12": tasks, tasks2, tasks3, tasks4, tasks-reset, tasks-setup, taskize-wrap-zone
 
 // =============================================================================
 // DOCUMENT SETUP
@@ -106,7 +106,7 @@
 Import the package in your Typst document:
 
 ```typst
-#import "@preview/taskize:0.2.11": tasks
+#import "@preview/taskize:0.2.12": tasks
 ```
 
 == Quick Start
@@ -840,7 +840,7 @@ The `tasks()` function supports the following parameters:
   [answer-line-below], [length/auto], [auto], [Space after the last answer line],
   [label-width], [auto/length], [auto], [Reserved width for labels],
   [label-align], [alignment], [right], [Label alignment],
-  [label-baseline], [string/length], ["center"], [Vertical alignment of labels. With `"center"` (default), inline content (text, math) shares the same paragraph line as the label for true baseline alignment. Use `"top"`, `"bottom"`, or a length offset to override.],
+  [label-baseline], [string/length], ["center"], [Vertical alignment of labels. With `"center"` (default), an item whose first line is inline (text, math), even when it continues with a block, carries its label on that first line, in a zero-width box: the label shares the line's baseline and takes no room in it. The first lines of the items of a row also share one baseline. Use `"top"`, `"bottom"`, or a length offset to override.],
   [label-weight], [string], ["regular"], [Font weight for labels],
   [indent-after-label], [length], [0.4em], [Space after label],
   [indent], [length], [0pt], [Left indentation of the block],

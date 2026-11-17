@@ -672,42 +672,22 @@
     ]
   }
 
-  // Baseline-aligned rendering: label and content share the same paragraph
-  // line, so their baselines match exactly even when the content starts with
-  // a tall element (display fraction, vector, ...). Wrapped lines are pushed
-  // past the label column with a hanging indent.
-  // Only used for inline content with the default label-baseline ("center");
-  // block content and explicit baseline offsets keep the grid-cell rendering.
+  // Baseline-aligned rendering, for an item whose first line is inline (the
+  // whole item, or a first line followed by a block: a nested tasks call, a
+  // figure, a table). The item is indented by the label column and the label
+  // is pulled back into the margin that frees, in a zero-width box at the
+  // start of the first line: it shares that line's baseline whatever its
+  // height (display fraction, vector, ...), and takes no room in the line,
+  // so an unbreakable formula almost as wide as the column still fits beside
+  // it instead of dropping below a lone label. Wrapped lines keep the indent.
+  // The content is passed through untouched, so its own inner spacing (a
+  // nested #tasks and its `above`, a figure's block spacing) is preserved.
+  // Only used with the default label-baseline ("center"); block content and
+  // explicit baseline offsets keep the grid-cell rendering.
   let use-inline-baseline = lbl-baseline == "center"
 
-  let make-inline-cell(label, content, span) = {
-    let lbl = text(weight: lbl-weight)[#label]
-    let halign = if type(lbl-align) == alignment and lbl-align.x != none {
-      lbl-align.x
-    } else {
-      right
-    }
-    let label-box = box(width: actual-label-width, {
-      if halign == left { lbl; h(1fr) }
-      else if halign == center { h(1fr); lbl; h(1fr) }
-      else { h(1fr); lbl }
-    })
-    // Explicit par(): bare content in a grid cell is not a paragraph element,
-    // so a `set par(hanging-indent: ..)` rule would not apply to it.
-    grid.cell(colspan: span * 2, align(left + top, par(
-      hanging-indent: actual-label-width + indent-after,
-      [#label-box#h(indent-after)#wrap-content(content)],
-    )))
-  }
-
-  // Same, for an item whose first line is inline but which continues with a
-  // block (a nested tasks call, a figure, a table). The item is indented by
-  // the label column and the label is pulled back into the margin that frees,
-  // so it sits on the first line and shares its baseline. The content is
-  // passed through untouched, so its own inner spacing — a nested #tasks and
-  // its `above`, a figure's block spacing — is preserved exactly. Splitting it
-  // into head and tail instead would drop the weak spacing at the seam.
-  let make-hanging-cell(label, content, span) = {
+  // `strut` (measurement only) is put at the start of the first line.
+  let first-line-body(label, content, strut: none) = {
     let lbl = text(weight: lbl-weight)[#label]
     let halign = if type(lbl-align) == alignment and lbl-align.x != none {
       lbl-align.x
@@ -720,21 +700,25 @@
       else { h(1fr); lbl }
     })
     let indent = actual-label-width + indent-after
-    grid.cell(colspan: span * 2, align(left + top, pad(left: indent, {
-      // zero width: the label rides on the content's first line, so it shares
-      // that line's baseline whatever the line's height
+    pad(left: indent, {
+      if strut != none { box(height: strut) }
       box(width: 0pt, move(dx: -indent, label-box))
       wrap-content(content)
-    })))
+    })
+  }
+
+  // `top-pad` lowers the cell so that its first line shares the baseline of
+  // the other first-line items of the same row (see the Render step).
+  let make-first-line-cell(label, content, span, top-pad: 0pt) = {
+    grid.cell(colspan: span * 2, align(left + top, pad(top: top-pad, first-line-body(label, content))))
   }
 
   // Build the cell(s) for one item: a single baseline-aligned cell when
   // possible, otherwise the classic label cell + top-aligned content cell.
-  let make-item-cells(label, content, span) = {
-    if use-inline-baseline and is-inline-content(content) {
-      (make-inline-cell(label, content, span),)
-    } else if use-inline-baseline and starts-inline(content) {
-      (make-hanging-cell(label, content, span),)
+  let is-first-line-item(content) = use-inline-baseline and starts-inline(content)
+  let make-item-cells(label, content, span, top-pad: 0pt) = {
+    if is-first-line-item(content) {
+      (make-first-line-cell(label, content, span, top-pad: top-pad),)
     } else if span == 1 {
       (make-label-cell(label), make-content-cell(content))
     } else {
@@ -778,7 +762,7 @@
             let num = start-num + item-idx
             let label = format-label(num, fmt)
 
-            grid-content += make-item-cells(label, item-content, 1)
+            grid-content.push((taskize-item: (label: label, content: item-content, span: 1, row: row)))
           } else {
             // No more items, fill with empty cells
             grid-content.push([])
@@ -893,7 +877,7 @@
             let num = start-num + item-idx
             let label = format-label(num, fmt)
 
-            grid-content += make-item-cells(label, item-content, span)
+            grid-content.push((taskize-item: (label: label, content: item-content, span: span, row: row)))
             col += span  // Skip the spanned columns
           }
         }
@@ -924,7 +908,7 @@
       let num = start-num + i
       let label = format-label(num, fmt)
 
-      grid-content += make-item-cells(label, item-content, span)
+      grid-content.push((taskize-item: (label: label, content: item-content, span: span, row: current-row)))
 
       current-col += span
     }
@@ -940,18 +924,67 @@
   // Update counter
   tasks-counter.update(start-num + num-items - 1)
 
+  let is-item(entry) = type(entry) == dictionary and "taskize-item" in entry
+
+  // Height of the first line above its baseline, for a paragraph laid out at
+  // width `w`: a tall strut put at the start of the first line raises that
+  // line, and only that line, to the strut's height. Same result whatever
+  // baseline Typst gives to a box (it changed between 0.14 and 0.15).
+  let first-line-ascent(label, content, w) = {
+    let strut = 50em.to-absolute()
+    let plain = measure(block(width: w, first-line-body(label, content))).height
+    let raised = measure(block(width: w, first-line-body(label, content, strut: strut))).height
+    strut - (raised - plain)
+  }
+
   // Render
   block(
     width: 100%,
     above: above-spacing,
     below: below-spacing,
     inset: (left: indent),
-    grid(
-      columns: grid-columns,
-      column-gutter: (indent-after, col-gut) * cols,
-      row-gutter: row-gut,
-      ..grid-content
-    )
+    layout(size => {
+      // Grid cells are top-aligned: an item whose first line is tall (a
+      // display fraction) would sit lower than its neighbours. Each inline
+      // item is lowered by the difference between the tallest first line of
+      // its row and its own, so the first lines of a row share one baseline.
+      let pads = (:)
+      if cols > 1 {
+        let gutters = cols * indent-after.to-absolute() + (cols - 1) * col-gut.to-absolute()
+        let fr-width = (size.width - cols * actual-label-width.to-absolute() - gutters) / cols
+        let ascents = (:)
+        for (i, entry) in grid-content.enumerate() {
+          if is-item(entry) and is-first-line-item(entry.taskize-item.content) {
+            let it = entry.taskize-item
+            let w = it.span * (actual-label-width.to-absolute() + indent-after.to-absolute() + fr-width) + (it.span - 1) * col-gut.to-absolute()
+            ascents.insert(str(i), (row: it.row, ascent: first-line-ascent(it.label, it.content, w)))
+          }
+        }
+        let row-max = (:)
+        for (_, a) in ascents {
+          let key = str(a.row)
+          row-max.insert(key, calc.max(row-max.at(key, default: 0pt), a.ascent))
+        }
+        for (i, a) in ascents {
+          pads.insert(i, row-max.at(str(a.row)) - a.ascent)
+        }
+      }
+      let cells = ()
+      for (i, entry) in grid-content.enumerate() {
+        if is-item(entry) {
+          let it = entry.taskize-item
+          cells += make-item-cells(it.label, it.content, it.span, top-pad: pads.at(str(i), default: 0pt))
+        } else {
+          cells.push(entry)
+        }
+      }
+      grid(
+        columns: grid-columns,
+        column-gutter: (indent-after, col-gut) * cols,
+        row-gutter: row-gut,
+        ..cells
+      )
+    })
   )
 }
 
